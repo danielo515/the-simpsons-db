@@ -58,18 +58,52 @@ export const EpisodeIdParam = Schema.Struct({
 })
 
 // Error Schemas
-export const NotFoundError = Schema.Struct({
-  message: Schema.String,
-  code: Schema.Literal("NOT_FOUND")
+export class ValidationError extends Schema.TaggedError<ValidationError>()(
+  "ValidationError",
+  {
+    message: Schema.String,
+    errors: Schema.optional(Schema.Array(Schema.String))
+  }
+) {}
+
+export class NotFoundError extends Schema.TaggedError<NotFoundError>()(
+  "NotFoundError",
+  {
+    message: Schema.String,
+    resource: Schema.String
+  }
+) {}
+
+export class InternalServerError extends Schema.TaggedError<InternalServerError>()(
+  "InternalServerError",
+  {
+    message: Schema.String
+  }
+) {}
+
+// Search Schemas
+export const SearchQuery = Schema.Struct({
+  q: Schema.String.pipe(Schema.minLength(1)),
+  page: Schema.optional(Schema.NumberFromString.pipe(Schema.int(), Schema.positive())),
+  limit: Schema.optional(Schema.NumberFromString.pipe(Schema.int(), Schema.between(1, 100))),
+  threshold: Schema.optional(Schema.NumberFromString.pipe(Schema.between(0, 1))),
+  episodeId: Schema.optional(Schema.UUID)
 })
 
-export const ValidationError = Schema.Struct({
-  message: Schema.String,
-  code: Schema.Literal("VALIDATION_ERROR"),
-  details: Schema.optional(Schema.Array(Schema.String))
+export const SearchResult = Schema.Struct({
+  id: Schema.UUID,
+  episodeId: Schema.UUID,
+  text: Schema.String,
+  startTime: Schema.Number,
+  endTime: Schema.Number,
+  confidence: Schema.Number,
+  episode: Schema.optional(Episode)
 })
 
-export const InternalServerError = Schema.Struct({
-  message: Schema.String,
-  code: Schema.Literal("INTERNAL_SERVER_ERROR")
+export const SearchResponse = PaginatedResponse(SearchResult)
+
+export const SimilaritySearchRequest = Schema.Struct({
+  text: Schema.String.pipe(Schema.minLength(1)),
+  limit: Schema.optional(Schema.NumberFromString.pipe(Schema.int(), Schema.between(1, 100))),
+  threshold: Schema.optional(Schema.NumberFromString.pipe(Schema.between(0, 1)))
 })

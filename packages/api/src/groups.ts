@@ -6,7 +6,9 @@ import {
   getEpisodes,
   getPendingEpisodes,
   healthCheck,
-  processEpisode
+  processEpisode,
+  searchTranscriptions,
+  similaritySearch
 } from "./endpoints.js"
 
 export const HealthGroup = HttpApiGroup
@@ -21,3 +23,8 @@ export const EpisodesGroup = HttpApiGroup
   .add(deleteEpisode)
   .add(getPendingEpisodes)
   .add(processEpisode)
+
+export const SearchGroup = HttpApiGroup
+  .make("Search")
+  .add(searchTranscriptions)
+  .add(similaritySearch)

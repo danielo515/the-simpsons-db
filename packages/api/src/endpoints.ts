@@ -8,6 +8,9 @@ import {
   HealthResponse,
   InternalServerError,
   NotFoundError,
+  SearchQuery,
+  SearchResponse,
+  SimilaritySearchRequest,
   ValidationError
 } from "./schemas.js"
 
@@ -56,5 +59,20 @@ export const processEpisode = HttpApiEndpoint
   .post("processEpisode")`/episodes/${episodeIdParam}/process`
   .addSuccess(Episode)
   .addError(NotFoundError, { status: 404 })
+  .addError(ValidationError, { status: 400 })
+  .addError(InternalServerError, { status: 500 })
+
+// Search Endpoints
+export const searchTranscriptions = HttpApiEndpoint
+  .get("searchTranscriptions", "/search")
+  .setUrlParams(SearchQuery)
+  .addSuccess(SearchResponse)
+  .addError(ValidationError, { status: 400 })
+  .addError(InternalServerError, { status: 500 })
+
+export const similaritySearch = HttpApiEndpoint
+  .post("similaritySearch", "/search/similarity")
+  .setPayload(SimilaritySearchRequest)
+  .addSuccess(SearchResponse)
   .addError(ValidationError, { status: 400 })
   .addError(InternalServerError, { status: 500 })
