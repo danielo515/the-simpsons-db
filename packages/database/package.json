@@ -1,0 +1,44 @@
+{
+  "name": "@simpsons-db/database",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Database schemas and migrations for The Simpsons Database",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./schemas": {
+      "import": "./dist/schemas/index.js",
+      "types": "./dist/schemas/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/migrate.ts",
+    "db:seed": "tsx src/seed.ts",
+    "db:reset": "tsx src/reset.ts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@effect/sql": "latest",
+    "@effect/sql-drizzle": "latest",
+    "@effect/sql-pg": "^0.45.1",
+    "drizzle-orm": "^0.44.4",
+    "effect": "latest",
+    "pg": "^8.16.3",
+    "postgres": "^3.4.7"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.5",
+    "drizzle-kit": "^0.31.4",
+    "tsx": "^4.20.4",
+    "typescript": "^5.9.2"
+  }
+}
