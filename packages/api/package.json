@@ -1,0 +1,27 @@
+{
+  "name": "@simpsons-db/api",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@effect/platform": "latest",
+    "effect": "latest"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2"
+  },
+  "peerDependencies": {
+    "@simpsons-db/shared": "workspace:*",
+    "@simpsons-db/domain": "workspace:*"
+  }
+}
