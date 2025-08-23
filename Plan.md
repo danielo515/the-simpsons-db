@@ -190,18 +190,18 @@ CREATE TABLE transcriptions (
 );
 ```
 
-### Embeddings Table
+### Transcription Embeddings Table
 
 ```sql
-CREATE TABLE embeddings (
+CREATE TABLE transcription_embeddings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   transcription_id UUID REFERENCES transcriptions(id) ON DELETE CASCADE,
-  embedding VECTOR(1536) NOT NULL, -- OpenAI ada-002 dimensions
+  embedding VECTOR(1536) NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Vector similarity index
-CREATE INDEX ON embeddings USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX ON transcription_embeddings USING ivfflat (embedding vector_cosine_ops);
 ```
 
 ### Thumbnails Table
@@ -559,7 +559,7 @@ const transcriptions = pgTable('transcriptions', {
   createdAt: timestamp('created_at').defaultNow()
 })
 
-const embeddings = pgTable('embeddings', {
+const transcriptionEmbeddings = pgTable('transcription_embeddings', {
   id: uuid('id').primaryKey().defaultRandom(),
   transcriptionId: uuid('transcription_id').references(() => transcriptions.id, { onDelete: 'cascade' }),
   embedding: vector('embedding', { dimensions: 1536 }).notNull(),
@@ -618,22 +618,22 @@ class DrizzleEpisodesRepository extends EpisodesRepository {
   }).pipe(Effect.scoped)
 }
 
-// Embeddings repository
-abstract class EmbeddingsRepository extends Effect.Service<EmbeddingsRepository>()("EmbeddingsRepository", {
+// Transcription Embeddings repository
+abstract class TranscriptionEmbeddingsRepository extends Effect.Service<TranscriptionEmbeddingsRepository>()("TranscriptionEmbeddingsRepository", {
   accessors: true
 }) {
-  abstract create: (data: CreateEmbeddingData) => Effect.Effect<Embedding, DatabaseError>
+  abstract create: (data: CreateTranscriptionEmbeddingData) => Effect.Effect<TranscriptionEmbedding, DatabaseError>
   abstract findSimilar: (vector: number[], limit: number) => Effect.Effect<SimilarityResult[], DatabaseError>
-  abstract findByTranscriptionId: (transcriptionId: string) => Effect.Effect<Embedding[], DatabaseError>
+  abstract findByTranscriptionId: (transcriptionId: string) => Effect.Effect<TranscriptionEmbedding[], DatabaseError>
 }
 
-class DrizzleEmbeddingsRepository extends EmbeddingsRepository {
+class DrizzleTranscriptionEmbeddingsRepository extends TranscriptionEmbeddingsRepository {
   static readonly Live = Effect.gen(function* () {
     const db = yield* DrizzlePgClient
 
-    const create = (data: CreateEmbeddingData) =>
-      db.insert(embeddings).values(data).returning().pipe(
-        Effect.map((rows) => rows[0] as Embedding),
+    const create = (data: CreateTranscriptionEmbeddingData) =>
+      db.insert(transcriptionEmbeddings).values(data).returning().pipe(
+        Effect.map((rows) => rows[0] as TranscriptionEmbedding),
         Effect.mapError((error) => new DatabaseError({ cause: error }))
       )
 
@@ -642,7 +642,7 @@ class DrizzleEmbeddingsRepository extends EmbeddingsRepository {
         SELECT e.*, t.text, t.start_time_seconds, t.end_time_seconds, 
                ep.title, ep.season_number, ep.episode_number,
                1 - (e.embedding <=> ${vector}::vector) as similarity
-        FROM ${embeddings} e
+        FROM ${transcriptionEmbeddings} e
         JOIN ${transcriptions} t ON e.transcription_id = t.id
         JOIN ${episodes} ep ON t.episode_id = ep.id
         ORDER BY e.embedding <=> ${vector}::vector
@@ -653,13 +653,13 @@ class DrizzleEmbeddingsRepository extends EmbeddingsRepository {
       )
 
     const findByTranscriptionId = (transcriptionId: string) =>
-      db.select().from(embeddings)
-        .where(eq(embeddings.transcriptionId, transcriptionId)).pipe(
-          Effect.map((rows) => rows as Embedding[]),
+      db.select().from(transcriptionEmbeddings)
+        .where(eq(transcriptionEmbeddings.transcriptionId, transcriptionId)).pipe(
+          Effect.map((rows) => rows as TranscriptionEmbedding[]),
           Effect.mapError((error) => new DatabaseError({ cause: error }))
         )
 
-    return EmbeddingsRepository.of({ create, findSimilar, findByTranscriptionId })
+    return TranscriptionEmbeddingsRepository.of({ create, findSimilar, findByTranscriptionId })
   }).pipe(Effect.scoped)
 }
 
