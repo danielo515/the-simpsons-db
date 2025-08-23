@@ -1,0 +1,32 @@
+{
+  "name": "@simpsons-db/ai-services",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "AI services for The Simpsons Database",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "test": "vitest",
+    "coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@effect/platform": "latest",
+    "@simpsons-db/shared": "workspace:*",
+    "effect": "latest",
+    "openai": "^5.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
