@@ -27,13 +27,15 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@effect/sql": "latest",
+    "@effect/platform": "*",
+    "@effect/platform-node": "*",
+    "@effect/sql": "*",
     "@effect/sql-drizzle": "^0.43.0",
-    "@effect/sql-pg": "^0.45.1",
+    "@effect/sql-pg": "*",
     "@simpsons-db/shared": "workspace:*",
     "drizzle-orm": "^0.44.4",
-    "effect": "latest",
-    "pg": "^8.16.3",
+    "effect": "*",
+    "pg": "8.13.1",
     "postgres": "^3.4.7"
   },
   "devDependencies": {

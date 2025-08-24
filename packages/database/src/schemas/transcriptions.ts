@@ -1,6 +1,4 @@
-import { Transcription as DomainTranscription } from "@simpsons-db/domain"
 import { decimal, index, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
-import { Schema } from "effect"
 import { episodes } from "./episodes.js"
 
 export const transcriptions = pgTable(
@@ -29,15 +27,6 @@ export const transcriptions = pgTable(
   ]
 )
 
-// Database schema extends domain entity with database-specific fields
-export const TranscriptionSchema = DomainTranscription.pipe(Schema.extend(Schema.Struct({
-  updatedAt: Schema.DateFromSelf
-})))
-
-// New transcription omits database-generated fields
-export const NewTranscriptionSchema = DomainTranscription.pipe(
-  Schema.omit("id")
-)
-
-export type Transcription = typeof TranscriptionSchema.Type
-export type NewTranscription = typeof NewTranscriptionSchema.Type
+// Database record type (what comes from/goes to the database)
+export type TranscriptionRecord = typeof transcriptions.$inferSelect
+export type NewTranscriptionRecord = typeof transcriptions.$inferInsert
