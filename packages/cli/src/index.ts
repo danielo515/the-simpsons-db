@@ -18,13 +18,10 @@ const cli = Command.make("simpsons-db", {
   ])
 )
 
-const program = Effect.gen(function*() {
-  const args = process.argv.slice(2)
-  yield* Command.run(cli, {
-    name: "simpsons-db",
-    version: "0.1.0"
-  })(args)
-}).pipe(
+const program = Command.run(cli, {
+  name: "simpsons-db",
+  version: "0.1.0"
+})(process.argv.slice(2)).pipe(
   Effect.provide(DatabaseLive),
   Effect.tapErrorCause(Effect.logError)
 )

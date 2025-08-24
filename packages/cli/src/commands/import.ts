@@ -3,7 +3,7 @@ import { EpisodeService } from "@simpsons-db/domain"
 import { isVideoFile } from "@simpsons-db/shared"
 import { Effect } from "effect"
 
-const pathArg = Args.file("path", { exists: "yes" }).pipe(
+const pathArg = Args.file({ exists: "yes" }).pipe(
   Args.withDescription("Path to video file or directory to import")
 )
 
@@ -13,17 +13,16 @@ const recursiveOption = Options.boolean("recursive").pipe(
 )
 
 export const importCommand = Command.make("import", {
-  summary: "Import video files into the database",
   args: pathArg,
   options: recursiveOption
 }).pipe(
-  Command.withHandler(({ args: path, options: { recursive } }) =>
+  Command.withHandler(({ args: path, options }) =>
     Effect.gen(function*() {
       const episodeService = yield* EpisodeService
 
       yield* Effect.log(`Importing from: ${path}`)
 
-      if (recursive) {
+      if (options) {
         // TODO: Implement recursive directory scanning
         yield* Effect.log("Recursive import not yet implemented")
         return
@@ -31,7 +30,7 @@ export const importCommand = Command.make("import", {
 
       // Check if it's a video file
       if (!isVideoFile(path)) {
-        yield* Effect.fail(new Error(`Not a supported video file: ${path}`))
+        return yield* Effect.fail(new Error(`Not a supported video file: ${path}`))
       }
 
       const episode = yield* episodeService.importFromFile(path)

@@ -49,9 +49,9 @@ export const listCommand = Command.make("list", {
         processed: processed ? true : undefined
       }
 
-      const result = yield* episodeService.findAll(pagination, filters)
+      const episodes = yield* episodeService.findAll(pagination, filters)
 
-      yield* Effect.log(`Found ${result.total} episodes (showing ${result.items.length}):`)
+      yield* Effect.log(`Found ${episodes.length} episodes:`)
 
       for (const episode of result.items) {
         const status = episode.processingStatus
