@@ -31,7 +31,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc -b --noEmit"
+    "type-check": "tsc -b tsconfig.json"
   },
   "dependencies": {
     "effect": "latest"

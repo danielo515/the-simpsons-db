@@ -36,7 +36,7 @@ export const TranscriptionSchema = DomainTranscription.pipe(Schema.extend(Schema
 
 // New transcription omits database-generated fields
 export const NewTranscriptionSchema = DomainTranscription.pipe(
-  Schema.omit("id", "createdAt")
+  Schema.omit("id")
 )
 
 export type Transcription = typeof TranscriptionSchema.Type

@@ -236,6 +236,9 @@ importers:
       '@effect/sql':
         specifier: latest
         version: 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
+      '@effect/sql-drizzle':
+        specifier: ^0.43.0
+        version: 0.43.0(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7))(effect@3.17.9)
       '@effect/sql-pg':
         specifier: ^0.45.1
         version: 0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)
@@ -580,6 +583,13 @@ packages:
     peerDependencies:
       '@effect/platform': ^0.90.5
       effect: ^3.17.8
+
+  '@effect/sql-drizzle@0.43.0':
+    resolution: {integrity: sha512-udfXOY+8RVCXZSqMH0wo3OTbIOc4RpGNq4XA+jv6QAa0NkMHytPYT5CtpqoQesnJKOgAlxU3pyQEvjl69amcNQ==}
+    peerDependencies:
+      '@effect/sql': ^0.44.0
+      drizzle-orm: '>=0.43.1 <0.50'
+      effect: ^3.17.0
 
   '@effect/sql-pg@0.45.1':
     resolution: {integrity: sha512-nhJO1cdZ8j19yALZ3Iy9Zyi6JQtcS8SNe4MEp9DSSx0JdX5ZC1dN3zT4gYxWoEwcMqp3oQnq3vtV+mdsSWsTXQ==}
@@ -3964,6 +3974,12 @@ snapshots:
   '@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)':
     dependencies:
       '@effect/platform': 0.90.6(effect@3.17.9)
+      effect: 3.17.9
+
+  '@effect/sql-drizzle@0.43.0(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7))(effect@3.17.9)':
+    dependencies:
+      '@effect/sql': 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
+      drizzle-orm: 0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7)
       effect: 3.17.9
 
   '@effect/sql-pg@0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)':

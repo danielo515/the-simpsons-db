@@ -21,7 +21,7 @@ export const TranscriptionEmbeddingSchema = DomainTranscriptionEmbedding.pipe(Sc
 })))
 
 export const NewTranscriptionEmbeddingSchema = DomainTranscriptionEmbedding.pipe(
-  Schema.omit("id", "createdAt")
+  Schema.omit("id")
 )
 
 export type TranscriptionEmbedding = typeof TranscriptionEmbeddingSchema.Type

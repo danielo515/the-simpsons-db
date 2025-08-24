@@ -19,7 +19,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc -b tsconfig.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/migrate.ts",
     "db:seed": "tsx src/seed.ts",
@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@effect/sql": "latest",
+    "@effect/sql-drizzle": "^0.43.0",
     "@effect/sql-pg": "^0.45.1",
     "@simpsons-db/shared": "workspace:*",
     "drizzle-orm": "^0.44.4",
