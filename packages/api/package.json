@@ -9,9 +9,10 @@
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b tsconfig.build.json",
     "clean": "rm -rf dist",
-    "dev": "tsc --watch"
+    "dev": "tsc -b tsconfig.src.json --watch",
+    "type-check": "tsc -b tsconfig.json"
   },
   "dependencies": {
     "@effect/platform": "latest",

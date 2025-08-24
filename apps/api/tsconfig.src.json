@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/domain" },
+    { "path": "../../packages/database" },
+    { "path": "../../packages/api" }
+  ],
+  "compilerOptions": {
+    "types": ["node"],
+    "outDir": "dist",
+    "tsBuildInfoFile": ".tsbuildinfo/src.tsbuildinfo",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@simpsons-db/domain": ["../domain/src/index.js"],
+      "@simpsons-db/domain/*": ["../domain/src/*"],
+      "@simpsons-db/database": ["../database/src/index.js"],
+      "@simpsons-db/database/*": ["../database/src/*"],
+      "@simpsons-db/shared": ["../shared/src/index.js"],
+      "@simpsons-db/shared/*": ["../shared/src/*"]
+    },
+    "rootDir": "src"
+  }
+}

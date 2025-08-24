@@ -1,14 +1,16 @@
 import { BaseFields, FilePath, ProcessingStatus, VideoMetadata } from "@simpsons-db/shared"
 import { Schema } from "effect"
 
+export const EpisodeId = Schema.UUID.pipe(Schema.brand("EpisodeId"))
+
 // Core Episode domain entity
 export const Episode = Schema.Struct({
-  id: BaseFields.id,
+  id: EpisodeId,
   filePath: FilePath,
-  fileName: BaseFields.fileName,
-  fileSize: BaseFields.fileSize,
-  checksum: BaseFields.checksum,
-  mimeType: BaseFields.optionalString(100),
+  fileName: Schema.String.pipe(Schema.minLength(1)),
+  fileSize: Schema.Number.pipe(Schema.positive()),
+  checksum: Schema.String.pipe(Schema.minLength(64)),
+  mimeType: Schema.optional(Schema.String.pipe(Schema.maxLength(100))),
   videoMetadata: Schema.optional(VideoMetadata),
   processingStatus: ProcessingStatus,
   transcriptionStatus: ProcessingStatus,
@@ -27,22 +29,18 @@ export type Episode = typeof Episode.Type
 export const CreateEpisodeRequest = Episode.pipe(
   Schema.omit(
     "id",
-    "createdAt",
-    "updatedAt",
-    "processedAt",
     "processingStatus",
     "transcriptionStatus",
     "thumbnailStatus",
-    "metadataStatus",
-    "errorMessage"
+    "metadataStatus"
   )
 )
 
 export const UpdateEpisodeRequest = Schema.Struct({
-  id: BaseFields.id
+  id: EpisodeId
 }).pipe(Schema.extend(
   Episode.pipe(
-    Schema.omit("id", "filePath", "fileName", "fileSize", "checksum", "mimeType", "createdAt", "updatedAt")
+    Schema.omit("id", "filePath", "fileName", "fileSize", "checksum", "mimeType")
   ).pipe(Schema.partial)
 ))
 
