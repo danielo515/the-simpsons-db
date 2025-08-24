@@ -2,6 +2,7 @@ import { BaseFields, FilePath, ProcessingStatus, VideoMetadata } from "@simpsons
 import { Schema } from "effect"
 
 export const EpisodeId = Schema.UUID.pipe(Schema.brand("EpisodeId"))
+export type EpisodeId = typeof EpisodeId.Type
 
 // Core Episode domain entity
 export const Episode = Schema.Struct({
