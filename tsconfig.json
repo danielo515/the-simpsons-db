@@ -2,10 +2,13 @@
   "extends": "./tsconfig.base.json",
   "include": [],
   "references": [
-    { "path": "packages/cli" },
-    { "path": "packages/domain" },
-    { "path": "packages/server" },
+    { "path": "packages/shared" },
     { "path": "packages/database" },
-    { "path": "packages/video-processor" }
+    { "path": "packages/domain" },
+    { "path": "packages/ai-services" },
+    { "path": "packages/video-processor" },
+    { "path": "packages/api" },
+    { "path": "apps/api" },
+    { "path": "packages/cli" }
   ]
 }

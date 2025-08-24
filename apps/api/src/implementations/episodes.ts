@@ -2,23 +2,41 @@ import { HttpApiBuilder } from "@effect/platform"
 import { SimpsonsDbApi } from "@simpsons-db/api"
 import { DateTime, Effect } from "effect"
 
-// Mock episode data for testing
+// Mock episode data for testing - matches domain Episode schema
 const mockEpisode = (id: string) => ({
   id,
   filePath: "/path/to/episode.mp4",
   fileName: "S01E01.mp4",
   fileSize: 1024000,
-  duration: 1320,
+  checksum: "abc123def456",
+  mimeType: "video/mp4",
+  videoMetadata: {
+    duration: 1320,
+    width: 1920,
+    height: 1080,
+    frameRate: 23.976,
+    bitrate: 5000000,
+    audioChannels: 2,
+    audioSampleRate: 48000
+  },
+  processingStatus: "completed" as const,
+  transcriptionStatus: "completed" as const,
+  thumbnailStatus: "completed" as const,
+  metadataStatus: "completed" as const,
   season: 1,
   episodeNumber: 1,
   title: "Simpsons Roasting on an Open Fire",
   description: "The first episode of The Simpsons",
   airDate: DateTime.unsafeNow(),
+  createdAt: DateTime.unsafeNow(),
+  updatedAt: DateTime.unsafeNow(),
+  processedAt: DateTime.unsafeNow(),
+  errorMessage: undefined,
+  // API-specific fields
+  duration: 1320,
   processed: true,
   hasTranscription: true,
-  hasMetadata: true,
-  createdAt: DateTime.unsafeNow(),
-  updatedAt: DateTime.unsafeNow()
+  hasMetadata: true
 })
 
 export const EpisodesGroupLive = HttpApiBuilder.group(SimpsonsDbApi, "Episodes", (handlers) =>

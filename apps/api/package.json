@@ -1,8 +1,8 @@
 {
-  "name": "@simpsons-db/server",
+  "name": "@simpsons-db/app-api",
   "version": "0.1.0",
   "type": "module",
-  "description": "API server for The Simpsons Database",
+  "description": "API server application for The Simpsons Database",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -16,7 +16,6 @@
   "dependencies": {
     "@effect/platform": "latest",
     "@effect/platform-node": "latest",
-    "@effect/schema": "latest",
     "@simpsons-db/ai-services": "workspace:*",
     "@simpsons-db/api": "workspace:*",
     "@simpsons-db/database": "workspace:*",
