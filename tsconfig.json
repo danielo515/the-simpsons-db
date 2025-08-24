@@ -4,6 +4,8 @@
   "references": [
     { "path": "packages/cli" },
     { "path": "packages/domain" },
-    { "path": "packages/server" }
+    { "path": "packages/server" },
+    { "path": "packages/database" },
+    { "path": "packages/video-processor" }
   ]
 }
