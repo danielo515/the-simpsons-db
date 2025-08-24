@@ -1,9 +1,11 @@
 import type { CommandExecutor } from "@effect/platform"
-import type { FileSystemError } from "@simpsons-db/shared"
-import { formatDuration, ProcessingError, sanitizeFilename } from "@simpsons-db/shared"
-import { Effect } from "effect"
+import { formatDuration, sanitizeFilename } from "@simpsons-db/shared"
+import { Data, Effect } from "effect"
 import type { AudioExtractionOptions, ThumbnailOptions, VideoClipOptions, VideoInfo } from "../types/index.js"
 import { FFmpegService } from "./ffmpeg-service.js"
+
+export class FileSystemError extends Data.TaggedError("@app/FileSystemError")<{ message: string; cause: unknown }> {}
+export class ProcessingError extends Data.TaggedError("@app/ProcessingError")<{ message: string; stage: string }> {}
 
 export class VideoProcessor extends Effect.Service<VideoProcessor>()(
   "VideoProcessor",

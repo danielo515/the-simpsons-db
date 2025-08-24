@@ -12,12 +12,12 @@
     }
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsc -b tsconfig.json",
+    "dev": "tsc -b tsconfig.json --watch",
     "clean": "rm -rf dist",
     "test": "vitest",
     "coverage": "vitest --coverage",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc -b tsconfig.json"
   },
   "dependencies": {
     "@effect/platform": "latest",
