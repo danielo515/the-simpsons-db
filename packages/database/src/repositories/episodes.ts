@@ -16,7 +16,7 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
     const create = (data: NewEpisode) =>
       Effect.gen(function*() {
         const result = yield* db.insert(episodes).values(data).returning()
-        return result[0] as Episode
+        return result[0]
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "create" }))),
         Effect.annotateLogs("operation", "EpisodesRepository.create"),

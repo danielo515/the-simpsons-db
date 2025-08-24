@@ -1,12 +1,44 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
+import { EpisodeId, Transcription, TranscriptionId } from "@simpsons-db/domain"
 import { and, asc, eq, gte, lte } from "drizzle-orm"
-import { Effect } from "effect"
-import type { NewTranscription, Transcription } from "../schemas/transcriptions.js"
+import type { ParseResult } from "effect"
+import { Effect, Schema } from "effect"
+import type { NewTranscriptionRecord, TranscriptionRecord } from "../schemas/transcriptions.js"
 import { transcriptions } from "../schemas/transcriptions.js"
 import { DatabaseError, NotFoundError } from "./episodes.js"
 
+// Transformation functions between database records and domain entities
+const toDomainEntity = (record: TranscriptionRecord): Effect.Effect<Transcription, ParseResult.ParseError, never> =>
+  Effect.gen(function*() {
+    const id = yield* Schema.decodeUnknown(TranscriptionId)(record.id)
+    const episodeId = yield* Schema.decodeUnknown(EpisodeId)(record.episodeId)
+
+    return yield* Schema.decodeUnknown(Transcription)({
+      id,
+      episodeId,
+      segmentIndex: record.segmentIndex,
+      startTime: parseFloat(record.startTime),
+      endTime: parseFloat(record.endTime),
+      text: record.text,
+      confidence: record.confidence ? parseFloat(record.confidence) : undefined,
+      language: record.language || undefined,
+      speaker: record.speaker || undefined
+    })
+  })
+
+const toDbRecord = (transcription: Omit<Transcription, "id">): NewTranscriptionRecord => ({
+  episodeId: transcription.episodeId,
+  segmentIndex: transcription.segmentIndex,
+  startTime: transcription.startTime.toString(),
+  endTime: transcription.endTime.toString(),
+  text: transcription.text,
+  confidence: transcription.confidence?.toString(),
+  language: transcription.language,
+  speaker: transcription.speaker
+})
+
 export interface TranscriptionFilters {
-  episodeId?: string
+  episodeId?: EpisodeId
   startTime?: number
   endTime?: number
   speaker?: string
@@ -23,20 +55,22 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
   effect: Effect.gen(function*() {
     const db = yield* PgDrizzle
 
-    const create = (data: NewTranscription) =>
+    const create = (transcription: Omit<Transcription, "id">) =>
       Effect.gen(function*() {
-        const result = yield* db.insert(transcriptions).values(data).returning()
-        return result[0] as Transcription
+        const dbRecord = toDbRecord(transcription)
+        const result = yield* db.insert(transcriptions).values(dbRecord).returning()
+        return yield* toDomainEntity(result[0])
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "create" }))),
         Effect.annotateLogs("operation", "TranscriptionsRepository.create"),
         Effect.withSpan("TranscriptionsRepository.create")
       )
 
-    const createMany = (data: Array<NewTranscription>) =>
+    const createMany = (transcriptionList: Array<Omit<Transcription, "id">>) =>
       Effect.gen(function*() {
-        const result = yield* db.insert(transcriptions).values(data).returning()
-        return result as Array<Transcription>
+        const dbRecords = transcriptionList.map(toDbRecord)
+        const result = yield* db.insert(transcriptions).values(dbRecords).returning()
+        return yield* Effect.forEach(result, toDomainEntity, { concurrency: "unbounded" })
       }).pipe(
         Effect.catchTag(
           "SqlError",
@@ -46,7 +80,9 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
         Effect.withSpan("TranscriptionsRepository.createMany")
       )
 
-    const findById = (id: string) =>
+    const findById = (
+      id: typeof TranscriptionId.Type
+    ): Effect.Effect<Transcription, DatabaseError | NotFoundError | ParseResult.ParseError, PgDrizzle> =>
       Effect.gen(function*() {
         const result = yield* db.select().from(transcriptions).where(eq(transcriptions.id, id))
 
@@ -54,14 +90,16 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
           return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id }))
         }
 
-        return result[0] as Transcription
+        return yield* toDomainEntity(result[0])
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findById" }))),
         Effect.annotateLogs("operation", "TranscriptionsRepository.findById"),
-        Effect.withSpan("TranscriptionsRepository.findById", { id })
+        Effect.withSpan("TranscriptionsRepository.findById")
       )
 
-    const findByEpisodeId = (episodeId: string) =>
+    const findByEpisodeId = (
+      episodeId: typeof EpisodeId.Type
+    ): Effect.Effect<ReadonlyArray<Transcription>, DatabaseError | ParseResult.ParseError, PgDrizzle> =>
       Effect.gen(function*() {
         const result = yield* db
           .select()
@@ -69,15 +107,20 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
           .where(eq(transcriptions.episodeId, episodeId))
           .orderBy(asc(transcriptions.segmentIndex))
 
-        return result as Array<Transcription>
+        return yield* Effect.forEach(result, toDomainEntity, { concurrency: "unbounded" })
       }).pipe(
-        Effect.catchTag("SqlError", (error) =>
-          Effect.fail(new DatabaseError({ cause: error, operation: "findByEpisodeId" }))),
+        Effect.catchTag(
+          "SqlError",
+          (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findByEpisodeId" }))
+        ),
         Effect.annotateLogs("operation", "TranscriptionsRepository.findByEpisodeId"),
-        Effect.withSpan("TranscriptionsRepository.findByEpisodeId", { episodeId })
+        Effect.withSpan("TranscriptionsRepository.findByEpisodeId")
       )
 
-    const findByTimeRange = (episodeId: string, timeRange: TimeRange) =>
+    const findByTimeRange = (
+      episodeId: typeof EpisodeId.Type,
+      timeRange: TimeRange
+    ): Effect.Effect<ReadonlyArray<Transcription>, DatabaseError | ParseResult.ParseError, PgDrizzle> =>
       Effect.gen(function*() {
         const result = yield* db
           .select()
@@ -91,78 +134,36 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
           )
           .orderBy(asc(transcriptions.startTime))
 
-        return result as Array<Transcription>
+        return yield* Effect.forEach(result, toDomainEntity, { concurrency: "unbounded" })
       }).pipe(
-        Effect.catchTag("SqlError", (error) =>
-          Effect.fail(new DatabaseError({ cause: error, operation: "findByTimeRange" }))),
+        Effect.catchTag(
+          "SqlError",
+          (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findByTimeRange" }))
+        ),
         Effect.annotateLogs("operation", "TranscriptionsRepository.findByTimeRange"),
-        Effect.withSpan("TranscriptionsRepository.findByTimeRange", { episodeId, timeRange })
+        Effect.withSpan("TranscriptionsRepository.findByTimeRange")
       )
 
-    const findBySpeaker = (episodeId: string, speaker: string) =>
+    const update = (
+      id: typeof TranscriptionId.Type,
+      updates: Partial<Omit<Transcription, "id">>
+    ): Effect.Effect<Transcription, DatabaseError | NotFoundError | ParseResult.ParseError, PgDrizzle> =>
       Effect.gen(function*() {
-        const result = yield* db
-          .select()
-          .from(transcriptions)
-          .where(
-            and(
-              eq(transcriptions.episodeId, episodeId),
-              eq(transcriptions.speaker, speaker)
-            )
-          )
-          .orderBy(asc(transcriptions.startTime))
-
-        return result as Array<Transcription>
-      }).pipe(
-        Effect.catchTag("SqlError", (error) =>
-          Effect.fail(new DatabaseError({ cause: error, operation: "findBySpeaker" }))),
-        Effect.annotateLogs("operation", "TranscriptionsRepository.findBySpeaker"),
-        Effect.withSpan("TranscriptionsRepository.findBySpeaker", { episodeId, speaker })
-      )
-
-    const findAll = (filters?: TranscriptionFilters) =>
-      Effect.gen(function*() {
-        let query = db.select().from(transcriptions)
-
-        const conditions = []
-
-        if (filters?.episodeId) {
-          conditions.push(eq(transcriptions.episodeId, filters.episodeId))
+        const dbUpdates: Partial<NewTranscriptionRecord> = {
+          ...(updates.episodeId && { episodeId: updates.episodeId }),
+          ...(updates.segmentIndex !== undefined && { segmentIndex: updates.segmentIndex }),
+          ...(updates.startTime !== undefined && { startTime: updates.startTime.toString() }),
+          ...(updates.endTime !== undefined && { endTime: updates.endTime.toString() }),
+          ...(updates.text && { text: updates.text }),
+          ...(updates.confidence !== undefined && { confidence: updates.confidence?.toString() }),
+          ...(updates.language !== undefined && { language: updates.language }),
+          ...(updates.speaker !== undefined && { speaker: updates.speaker }),
+          updatedAt: new Date()
         }
 
-        if (filters?.startTime !== undefined) {
-          conditions.push(gte(transcriptions.startTime, filters.startTime.toString()))
-        }
-
-        if (filters?.endTime !== undefined) {
-          conditions.push(lte(transcriptions.endTime, filters.endTime.toString()))
-        }
-
-        if (filters?.speaker) {
-          conditions.push(eq(transcriptions.speaker, filters.speaker))
-        }
-
-        if (filters?.language) {
-          conditions.push(eq(transcriptions.language, filters.language))
-        }
-
-        if (conditions.length > 0) {
-          query = query.where(and(...conditions))
-        }
-
-        const result = yield* query.orderBy(asc(transcriptions.startTime))
-        return result as Array<Transcription>
-      }).pipe(
-        Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findAll" }))),
-        Effect.annotateLogs("operation", "TranscriptionsRepository.findAll"),
-        Effect.withSpan("TranscriptionsRepository.findAll")
-      )
-
-    const update = (id: string, data: Partial<NewTranscription>) =>
-      Effect.gen(function*() {
         const result = yield* db
           .update(transcriptions)
-          .set({ ...data, updatedAt: new Date() })
+          .set(dbUpdates)
           .where(eq(transcriptions.id, id))
           .returning()
 
@@ -170,14 +171,14 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
           return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id }))
         }
 
-        return result[0] as Transcription
+        return yield* toDomainEntity(result[0])
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "update" }))),
         Effect.annotateLogs("operation", "TranscriptionsRepository.update"),
         Effect.withSpan("TranscriptionsRepository.update")
       )
 
-    const deleteById = (id: string) =>
+    const deleteById = (id: typeof TranscriptionId.Type) =>
       Effect.gen(function*() {
         const result = yield* db.delete(transcriptions).where(eq(transcriptions.id, id)).returning()
 
@@ -190,15 +191,7 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
         Effect.withSpan("TranscriptionsRepository.delete")
       )
 
-    const deleteByEpisodeId = (episodeId: string) =>
-      Effect.gen(function*() {
-        yield* db.delete(transcriptions).where(eq(transcriptions.episodeId, episodeId))
-      }).pipe(
-        Effect.annotateLogs("operation", "TranscriptionsRepository.deleteByEpisodeId"),
-        Effect.withSpan("TranscriptionsRepository.deleteByEpisodeId")
-      )
-
-    const getTranscriptionText = (episodeId: string, timeRange?: TimeRange) =>
+    const getTranscriptionText = (episodeId: typeof EpisodeId.Type, timeRange?: TimeRange) =>
       Effect.gen(function*() {
         const transcriptionSegments = timeRange
           ? yield* findByTimeRange(episodeId, timeRange)
@@ -218,11 +211,8 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
       findById,
       findByEpisodeId,
       findByTimeRange,
-      findBySpeaker,
-      findAll,
       update,
       deleteById,
-      deleteByEpisodeId,
       getTranscriptionText
     } as const
   })

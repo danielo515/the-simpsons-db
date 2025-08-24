@@ -42,20 +42,14 @@ export const EpisodeSchema = DomainEpisode.pipe(Schema.extend(Schema.Struct({
   metadata: Schema.optional(Schema.Unknown)
 })))
 
-// New episode omits database-generated fields and adds database-specific fields
+// New episode omits database-generated fields
 export const NewEpisodeSchema = EpisodeSchema.pipe(
   Schema.omit(
     "id",
-    "createdAt",
-    "updatedAt",
-    "processedAt",
-    "processingStatus",
-    "transcriptionStatus",
-    "thumbnailStatus",
-    "metadataStatus",
     "processed",
     "processingStartedAt",
-    "processingCompletedAt"
+    "processingCompletedAt",
+    "processingError"
   )
 )
 
