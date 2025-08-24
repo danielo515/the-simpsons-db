@@ -7,8 +7,8 @@ export const HealthResponse = Schema.Struct({
   service: Schema.String
 })
 
-// Episode Schemas
-export const Episode = Schema.Struct({
+// Episode API Response Schema (for API responses only)
+export const EpisodeResponse = Schema.Struct({
   id: Schema.UUID,
   filePath: Schema.String,
   fileName: Schema.String,
@@ -50,7 +50,7 @@ export const PaginatedResponse = <A, I, R>(itemSchema: Schema.Schema<A, I, R>) =
     })
   })
 
-export const EpisodesResponse = PaginatedResponse(Episode)
+export const EpisodesResponse = PaginatedResponse(EpisodeResponse)
 
 // Path Parameters
 export const EpisodeIdParam = Schema.Struct({
@@ -97,7 +97,7 @@ export const SearchResult = Schema.Struct({
   startTime: Schema.Number,
   endTime: Schema.Number,
   confidence: Schema.Number,
-  episode: Schema.optional(Episode)
+  episode: Schema.optional(EpisodeResponse)
 })
 
 export const SearchResponse = PaginatedResponse(SearchResult)

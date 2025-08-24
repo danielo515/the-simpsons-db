@@ -1,8 +1,8 @@
 import { HttpApiEndpoint, HttpApiSchema } from "@effect/platform"
 import {
   CreateEpisodeRequest,
-  Episode,
   EpisodeIdParam,
+  EpisodeResponse,
   EpisodesResponse,
   GetEpisodesQuery,
   HealthResponse,
@@ -32,7 +32,7 @@ export const getEpisodes = HttpApiEndpoint
 
 export const getEpisodeById = HttpApiEndpoint
   .get("getEpisodeById")`/episodes/${episodeIdParam}`
-  .addSuccess(Episode)
+  .addSuccess(EpisodeResponse)
   .addError(NotFoundError, { status: 404 })
   .addError(ValidationError, { status: 400 })
   .addError(InternalServerError, { status: 500 })
@@ -40,7 +40,7 @@ export const getEpisodeById = HttpApiEndpoint
 export const createEpisode = HttpApiEndpoint
   .post("createEpisode", "/episodes")
   .setPayload(CreateEpisodeRequest)
-  .addSuccess(Episode, { status: 201 })
+  .addSuccess(EpisodeResponse, { status: 201 })
   .addError(ValidationError, { status: 400 })
   .addError(InternalServerError, { status: 500 })
 
@@ -57,7 +57,7 @@ export const getPendingEpisodes = HttpApiEndpoint
 
 export const processEpisode = HttpApiEndpoint
   .post("processEpisode")`/episodes/${episodeIdParam}/process`
-  .addSuccess(Episode)
+  .addSuccess(EpisodeResponse)
   .addError(NotFoundError, { status: 404 })
   .addError(ValidationError, { status: 400 })
   .addError(InternalServerError, { status: 500 })
