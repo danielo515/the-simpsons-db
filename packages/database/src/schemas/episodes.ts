@@ -1,3 +1,4 @@
+import { Episode as DomainEpisode } from "@simpsons-db/domain"
 import { boolean, decimal, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
 import { Schema } from "effect"
 
@@ -24,11 +25,8 @@ export const episodes = pgTable("episodes", {
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 })
 
-export const EpisodeSchema = Schema.Struct({
-  id: Schema.UUID,
-  filePath: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(1000)),
-  fileName: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(255)),
-  fileSize: Schema.Number.pipe(Schema.int(), Schema.positive()),
+// Database schema extends domain entity with database-specific fields
+export const EpisodeSchema = DomainEpisode.pipe(Schema.extend(Schema.Struct({
   duration: Schema.String.pipe(Schema.pattern(/^\d+(\.\d{1,3})?$/)),
   resolution: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
   codec: Schema.optional(Schema.String.pipe(Schema.maxLength(50))),
@@ -37,32 +35,29 @@ export const EpisodeSchema = Schema.Struct({
   audioCodec: Schema.optional(Schema.String.pipe(Schema.maxLength(50))),
   audioChannels: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
   audioSampleRate: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  checksum: Schema.String.pipe(Schema.length(64)),
   processed: Schema.Boolean,
   processingStartedAt: Schema.optional(Schema.DateFromSelf),
   processingCompletedAt: Schema.optional(Schema.DateFromSelf),
   processingError: Schema.optional(Schema.String),
-  metadata: Schema.optional(Schema.Unknown),
-  createdAt: Schema.DateFromSelf,
-  updatedAt: Schema.DateFromSelf
-})
+  metadata: Schema.optional(Schema.Unknown)
+})))
 
-export const NewEpisodeSchema = Schema.Struct({
-  filePath: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(1000)),
-  fileName: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(255)),
-  fileSize: Schema.Number.pipe(Schema.int(), Schema.positive()),
-  duration: Schema.String.pipe(Schema.pattern(/^\d+(\.\d{1,3})?$/)),
-  resolution: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
-  codec: Schema.optional(Schema.String.pipe(Schema.maxLength(50))),
-  bitrate: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  frameRate: Schema.optional(Schema.String.pipe(Schema.pattern(/^\d+(\.\d{1,2})?$/))),
-  audioCodec: Schema.optional(Schema.String.pipe(Schema.maxLength(50))),
-  audioChannels: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  audioSampleRate: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  checksum: Schema.String.pipe(Schema.length(64)),
-  metadata: Schema.optional(Schema.Unknown),
-  processingError: Schema.optional(Schema.String)
-})
+// New episode omits database-generated fields and adds database-specific fields
+export const NewEpisodeSchema = EpisodeSchema.pipe(
+  Schema.omit(
+    "id",
+    "createdAt",
+    "updatedAt",
+    "processedAt",
+    "processingStatus",
+    "transcriptionStatus",
+    "thumbnailStatus",
+    "metadataStatus",
+    "processed",
+    "processingStartedAt",
+    "processingCompletedAt"
+  )
+)
 
 export type Episode = typeof EpisodeSchema.Type
 export type NewEpisode = typeof NewEpisodeSchema.Type

@@ -45,7 +45,7 @@ importers:
         version: 0.35.2
       '@effect/vitest':
         specifier: latest
-        version: 0.25.1(effect@3.17.9)(vitest@3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1))
+        version: 0.25.1(effect@3.17.9)(vitest@3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))
       '@eslint/compat':
         specifier: 1.3.2
         version: 1.3.2(eslint@9.34.0)
@@ -93,13 +93,56 @@ importers:
         version: 11.0.3
       tsx:
         specifier: ^4.20.4
-        version: 4.20.4
+        version: 4.20.5
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
+        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
+
+  apps/api:
+    dependencies:
+      '@effect/platform':
+        specifier: latest
+        version: 0.90.6(effect@3.17.9)
+      '@effect/platform-node':
+        specifier: latest
+        version: 0.96.0(@effect/cluster@0.48.2(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/workflow@0.9.2(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)
+      '@simpsons-db/ai-services':
+        specifier: workspace:*
+        version: link:../../packages/ai-services
+      '@simpsons-db/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@simpsons-db/database':
+        specifier: workspace:*
+        version: link:../../packages/database
+      '@simpsons-db/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@simpsons-db/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@simpsons-db/video-processor':
+        specifier: workspace:*
+        version: link:../../packages/video-processor
+      effect:
+        specifier: latest
+        version: 3.17.9
+    devDependencies:
+      '@types/node':
+        specifier: ^24.3.0
+        version: 24.3.0
+      tsx:
+        specifier: ^4.20.4
+        version: 4.20.5
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/ai-services:
     dependencies:
@@ -124,7 +167,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
+        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/api:
     dependencies:
@@ -180,25 +223,25 @@ importers:
         version: 24.3.0
       tsx:
         specifier: ^4.20.4
-        version: 4.20.4
+        version: 4.20.5
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
+        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/database:
     dependencies:
       '@effect/sql':
         specifier: latest
         version: 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
-      '@effect/sql-drizzle':
-        specifier: latest
-        version: 0.43.0(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7))(effect@3.17.9)
       '@effect/sql-pg':
         specifier: ^0.45.1
         version: 0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)
+      '@simpsons-db/shared':
+        specifier: workspace:*
+        version: link:../shared
       drizzle-orm:
         specifier: ^0.44.4
         version: 0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7)
@@ -220,7 +263,7 @@ importers:
         version: 0.31.4
       tsx:
         specifier: ^4.20.4
-        version: 4.20.4
+        version: 4.20.5
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
@@ -248,53 +291,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
-
-  packages/server:
-    dependencies:
-      '@effect/platform':
-        specifier: latest
-        version: 0.90.6(effect@3.17.9)
-      '@effect/platform-node':
-        specifier: latest
-        version: 0.96.0(@effect/cluster@0.48.2(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/workflow@0.9.2(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)
-      '@effect/schema':
-        specifier: latest
-        version: 0.75.5(effect@3.17.9)
-      '@simpsons-db/ai-services':
-        specifier: workspace:*
-        version: link:../ai-services
-      '@simpsons-db/api':
-        specifier: workspace:*
-        version: link:../api
-      '@simpsons-db/database':
-        specifier: workspace:*
-        version: link:../database
-      '@simpsons-db/domain':
-        specifier: workspace:*
-        version: link:../domain
-      '@simpsons-db/shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@simpsons-db/video-processor':
-        specifier: workspace:*
-        version: link:../video-processor
-      effect:
-        specifier: latest
-        version: 3.17.9
-    devDependencies:
-      '@types/node':
-        specifier: ^24.3.0
-        version: 24.3.0
-      tsx:
-        specifier: ^4.20.4
-        version: 4.20.4
-      typescript:
-        specifier: ^5.9.2
-        version: 5.9.2
-      vitest:
-        specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
+        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
 
   packages/shared:
     dependencies:
@@ -329,7 +326,7 @@ importers:
         version: 5.9.2
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
+        version: 3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
 
 packages:
 
@@ -583,19 +580,6 @@ packages:
     peerDependencies:
       '@effect/platform': ^0.90.5
       effect: ^3.17.8
-
-  '@effect/schema@0.75.5':
-    resolution: {integrity: sha512-TQInulTVCuF+9EIbJpyLP6dvxbQJMphrnRqgexm/Ze39rSjfhJuufF7XvU3SxTgg3HnL7B/kpORTJbHhlE6thw==}
-    deprecated: this package has been merged into the main effect package
-    peerDependencies:
-      effect: ^3.9.2
-
-  '@effect/sql-drizzle@0.43.0':
-    resolution: {integrity: sha512-udfXOY+8RVCXZSqMH0wo3OTbIOc4RpGNq4XA+jv6QAa0NkMHytPYT5CtpqoQesnJKOgAlxU3pyQEvjl69amcNQ==}
-    peerDependencies:
-      '@effect/sql': ^0.44.0
-      drizzle-orm: '>=0.43.1 <0.50'
-      effect: ^3.17.0
 
   '@effect/sql-pg@0.45.1':
     resolution: {integrity: sha512-nhJO1cdZ8j19yALZ3Iy9Zyi6JQtcS8SNe4MEp9DSSx0JdX5ZC1dN3zT4gYxWoEwcMqp3oQnq3vtV+mdsSWsTXQ==}
@@ -3348,8 +3332,8 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
-  tsx@4.20.4:
-    resolution: {integrity: sha512-yyxBKfORQ7LuRt/BQKBXrpcq59ZvSW0XxwfjAt3w2/8PmdxaFzijtMhTawprSHhpzeM5BgU2hXHG3lklIERZXg==}
+  tsx@4.20.5:
+    resolution: {integrity: sha512-+wKjMNU9w/EaQayHXb7WA7ZaHY6hN8WgfvHNQ3t1PnU91/7O8TcTnIhCDYTZwnt8JsO9IBqZ30Ln1r7pPF52Aw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -3982,17 +3966,6 @@ snapshots:
       '@effect/platform': 0.90.6(effect@3.17.9)
       effect: 3.17.9
 
-  '@effect/schema@0.75.5(effect@3.17.9)':
-    dependencies:
-      effect: 3.17.9
-      fast-check: 3.23.2
-
-  '@effect/sql-drizzle@0.43.0(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7))(effect@3.17.9)':
-    dependencies:
-      '@effect/sql': 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
-      drizzle-orm: 0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7)
-      effect: 3.17.9
-
   '@effect/sql-pg@0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)':
     dependencies:
       '@effect/experimental': 0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
@@ -4012,10 +3985,10 @@ snapshots:
     dependencies:
       effect: 3.17.9
 
-  '@effect/vitest@0.25.1(effect@3.17.9)(vitest@3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1))':
+  '@effect/vitest@0.25.1(effect@3.17.9)(vitest@3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
       effect: 3.17.9
-      vitest: 3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
+      vitest: 3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
 
   '@effect/workflow@0.9.2(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)':
     dependencies:
@@ -4754,13 +4727,13 @@ snapshots:
       chai: 5.3.3
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.2.4(vite@7.1.3(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1))':
+  '@vitest/mocker@3.2.4(vite@7.1.3(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))':
     dependencies:
       '@vitest/spy': 3.2.4
       estree-walker: 3.0.3
       magic-string: 0.30.18
     optionalDependencies:
-      vite: 7.1.3(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
+      vite: 7.1.3(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -6715,7 +6688,7 @@ snapshots:
   tslib@2.8.1:
     optional: true
 
-  tsx@4.20.4:
+  tsx@4.20.5:
     dependencies:
       esbuild: 0.25.9
       get-tsconfig: 4.10.1
@@ -6825,13 +6798,13 @@ snapshots:
       spdx-correct: 3.2.0
       spdx-expression-parse: 3.0.1
 
-  vite-node@3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1):
+  vite-node@3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1):
     dependencies:
       cac: 6.7.14
       debug: 4.4.1
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 7.1.3(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
+      vite: 7.1.3(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -6846,7 +6819,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite@7.1.3(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1):
+  vite@7.1.3(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1):
     dependencies:
       esbuild: 0.25.9
       fdir: 6.5.0(picomatch@4.0.3)
@@ -6857,14 +6830,14 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.3.0
       fsevents: 2.3.3
-      tsx: 4.20.4
+      tsx: 4.20.5
       yaml: 2.8.1
 
-  vitest@3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1):
+  vitest@3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@7.1.3(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1))
+      '@vitest/mocker': 3.2.4(vite@7.1.3(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4
@@ -6882,8 +6855,8 @@ snapshots:
       tinyglobby: 0.2.14
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 7.1.3(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
-      vite-node: 3.2.4(@types/node@24.3.0)(tsx@4.20.4)(yaml@2.8.1)
+      vite: 7.1.3(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
+      vite-node: 3.2.4(@types/node@24.3.0)(tsx@4.20.5)(yaml@2.8.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.3.0

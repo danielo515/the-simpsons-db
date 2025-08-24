@@ -8,30 +8,29 @@ This document contains all development tasks organized by feature area and prior
 
 ### 1. Infrastructure Setup
 
-- [ ] Create `data/` directory structure (input, processed, temp)
-- [ ] Configure environment variables template (`.env.example`)
-- [ ] Set up development scripts in root package.json
-- [ ] Create `.gitignore` for monorepo structure
-- [ ] Configure VS Code workspace settings
+- [x] Create `data/` directory structure (input, processed, temp)
+- [x] Configure environment variables template (`.env.example`)
+- [x] Set up development scripts in root package.json
+- [x] Create `.gitignore` for monorepo structure
+- [x] Configure VS Code workspace settings
 
 ### 2. Database Setup
 
-- [ ] Define `episodes` schema with Drizzle ORM (code-first)
-- [ ] Define `transcriptions` schema with timestamp indexing
-- [ ] Define `transcription_embeddings` schema with vector similarity index
-- [ ] Define `thumbnails` schema with episode references
-- [ ] Define `episode_metadata` schema for external API data
-- [ ] Set up Drizzle ORM configuration and schema exports
-- [ ] Create database migration system using Drizzle migrations
-- [ ] Configure `@effect/sql-drizzle-pg` integration
-- [ ] Create database connection pooling and error handling
-- [ ] Add database seeding scripts for development
-- [ ] Set up pgvector extension setup in migrations
-- [ ] Create schema validation and type safety utilities
+- [x] Define `episodes` schema with Drizzle ORM (code-first)
+- [x] Define `transcriptions` schema with timestamp indexing
+- [x] Define `transcription_embeddings` schema with vector similarity index
+- [x] Define `thumbnails` schema with episode references
+- [x] Define `episode_metadata` schema for external API data
+- [x] Set up Drizzle ORM configuration and schema exports
+- [x] Create database migration system using Drizzle migrations
+- [x] Create database connection pooling and error handling
+- [x] Add database seeding scripts for development
+- [x] Set up pgvector extension setup in migrations
+- [x] Create schema validation and type safety utilities
 
 ### 3. Core Packages Structure
 
-- [ ] Create `@simpsons-db/shared` package structure
+- [x] Create `@simpsons-db/shared` package structure
 - [ ] Define core domain types (Episode, Transcription, Embedding, etc.)
 - [ ] Create error types (DatabaseError, NotFoundError, etc.)
 - [ ] Set up `@simpsons-db/database` package with schemas
@@ -237,7 +236,7 @@ This document contains all development tasks organized by feature area and prior
 ### Phase 1 (Start Immediately)
 
 - Infrastructure Setup
-- Database Setup  
+- Database Setup
 - Core Packages Structure
 
 ### Phase 2 (After Foundation)
@@ -260,7 +259,7 @@ This document contains all development tasks organized by feature area and prior
 
 - **Total Tasks**: 150+
 - **High Priority**: 32 tasks
-- **Medium Priority**: 48 tasks  
+- **Medium Priority**: 48 tasks
 - **Low Priority**: 32 tasks
 - **Additional**: 38+ tasks
 

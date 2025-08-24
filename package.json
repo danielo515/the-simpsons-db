@@ -3,7 +3,8 @@
   "type": "module",
   "packageManager": "pnpm@10.14.0",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
     "clean": "node scripts/clean.mjs",
@@ -20,7 +21,7 @@
     "changeset-version": "changeset version && node scripts/version.mjs",
     "changeset-publish": "pnpm build && TEST_DIST= pnpm vitest && changeset publish",
     "dev": "pnpm --recursive --parallel run dev",
-    "dev:api": "pnpm --filter @simpsons-db/api run dev",
+    "dev:api": "pnpm --filter @simpsons-db/app-api run dev",
     "dev:web": "pnpm --filter @simpsons-db/web run dev",
     "dev:admin": "pnpm --filter @simpsons-db/admin run dev",
     "db:generate": "pnpm --filter @simpsons-db/database run db:generate",

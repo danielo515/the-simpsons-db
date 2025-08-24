@@ -37,15 +37,24 @@
     "removeComments": false,
     "plugins": [{ "name": "@effect/language-service" }],
     "paths": {
-      "@template/cli": ["./packages/cli/src/index.js"],
-      "@template/cli/*": ["./packages/cli/src/*.js"],
-      "@template/cli/test/*": ["./packages/cli/test/*.js"],
-      "@template/domain": ["./packages/domain/src/index.js"],
-      "@template/domain/*": ["./packages/domain/src/*.js"],
-      "@template/domain/test/*": ["./packages/domain/test/*.js"],
-      "@template/server": ["./packages/server/src/index.js"],
-      "@template/server/*": ["./packages/server/src/*.js"],
-      "@template/server/test/*": ["./packages/server/test/*.js"]
+      "@simpsons-db/shared": ["./packages/shared/src/index.js"],
+      "@simpsons-db/shared/*": ["./packages/shared/src/*"],
+      "@simpsons-db/database": ["./packages/database/src/index.js"],
+      "@simpsons-db/database/*": ["./packages/database/src/*"],
+      "@simpsons-db/domain": ["./packages/domain/src/index.js"],
+      "@simpsons-db/domain/*": ["./packages/domain/src/*"],
+      "@simpsons-db/ai-services": ["./packages/ai-services/src/index.js"],
+      "@simpsons-db/ai-services/*": ["./packages/ai-services/src/*"],
+      "@simpsons-db/video-processor": [
+        "./packages/video-processor/src/index.js"
+      ],
+      "@simpsons-db/video-processor/*": ["./packages/video-processor/src/*"],
+      "@simpsons-db/api": ["./packages/api/src/index.js"],
+      "@simpsons-db/api/*": ["./packages/api/src/*"],
+      "@simpsons-db/app-api": ["./apps/api/src/index.js"],
+      "@simpsons-db/app-api/*": ["./apps/api/src/*"],
+      "@simpsons-db/cli": ["./packages/cli/src/index.js"],
+      "@simpsons-db/cli/*": ["./packages/cli/src/*"]
     }
   }
 }

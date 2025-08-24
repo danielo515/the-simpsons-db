@@ -1,10 +1,17 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["src"],
+  "references": [{ "path": "../shared" }, { "path": "../domain" }],
   "compilerOptions": {
     "types": ["node"],
-    "outDir": "build/src",
+    "outDir": "dist",
     "tsBuildInfoFile": ".tsbuildinfo/src.tsbuildinfo",
-    "rootDir": "src"
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@simpsons-db/domain": ["../domain/src/index.js"],
+      "@simpsons-db/domain/*": ["../domain/src/*"]
+    }
   }
 }

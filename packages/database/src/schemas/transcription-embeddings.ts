@@ -1,3 +1,4 @@
+import { TranscriptionEmbedding as DomainTranscriptionEmbedding } from "@simpsons-db/domain"
 import { index, pgTable, timestamp, uuid, varchar, vector } from "drizzle-orm/pg-core"
 import { Schema } from "effect"
 import { transcriptions } from "./transcriptions.js"
@@ -9,25 +10,19 @@ export const transcriptionEmbeddings = pgTable("transcription_embeddings", {
   model: varchar("model", { length: 50 }).notNull().default("text-embedding-ada-002"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
-}, (table) => ({
-  transcriptionIdIdx: index("transcription_embeddings_transcription_id_idx").on(table.transcriptionId),
-  embeddingIdx: index("transcription_embeddings_embedding_idx").using("hnsw", table.embedding.op("vector_cosine_ops"))
-}))
+}, (table) => [
+  index("transcription_embeddings_transcription_id_idx").on(table.transcriptionId),
+  index("transcription_embeddings_embedding_idx").using("hnsw", table.embedding.op("vector_cosine_ops"))
+])
 
-export const TranscriptionEmbeddingSchema = Schema.Struct({
-  id: Schema.UUID,
-  transcriptionId: Schema.UUID,
-  embedding: Schema.Array(Schema.Number),
-  model: Schema.String.pipe(Schema.maxLength(50)),
-  createdAt: Schema.DateFromSelf,
+// Database schema extends domain entity with database-specific fields
+export const TranscriptionEmbeddingSchema = DomainTranscriptionEmbedding.pipe(Schema.extend(Schema.Struct({
   updatedAt: Schema.DateFromSelf
-})
+})))
 
-export const NewTranscriptionEmbeddingSchema = Schema.Struct({
-  transcriptionId: Schema.UUID,
-  embedding: Schema.Array(Schema.Number),
-  model: Schema.optional(Schema.String.pipe(Schema.maxLength(50)))
-})
+export const NewTranscriptionEmbeddingSchema = DomainTranscriptionEmbedding.pipe(
+  Schema.omit("id", "createdAt")
+)
 
 export type TranscriptionEmbedding = typeof TranscriptionEmbeddingSchema.Type
 export type NewTranscriptionEmbedding = typeof NewTranscriptionEmbeddingSchema.Type

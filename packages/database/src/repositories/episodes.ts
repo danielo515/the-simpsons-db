@@ -1,4 +1,4 @@
-import { PgDrizzle } from "@effect/sql-drizzle"
+import { PgDrizzle } from "@effect/sql-drizzle/Pg"
 import { asc, eq, isNotNull, isNull } from "drizzle-orm"
 import { Data, Effect } from "effect"
 import type { Episode, NewEpisode } from "../schemas/episodes.js"

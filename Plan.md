@@ -115,6 +115,7 @@ the-simpsons-db/
 
 - **`@simpsons-db/database`**: Database schemas, migrations, and connection utilities
 - **`@simpsons-db/core`**: Business logic services and repositories
+- **`@simpsons-db/api`**: API definition that is shared between server and client
 - **`@simpsons-db/video-processor`**: FFmpeg integration and video processing
 - **`@simpsons-db/ai-services`**: OpenAI API integration for transcription and embeddings
 - **`@simpsons-db/shared`**: Common types, utilities, and constants
@@ -133,10 +134,7 @@ packages:
 {
   "name": "the-simpsons-db",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "packageManager": "pnpm@8.0.0",
   "scripts": {
     "build": "pnpm -r build",
@@ -249,48 +247,6 @@ CREATE TABLE episode_metadata (
 - Extract metadata using FFprobe
 - Store file information in database
 
-### 2. Audio Extraction & Transcription
-
-```typescript
-const processAudio = Effect.gen(function* () {
-  // Extract audio using FFmpeg
-  yield* extractAudio(videoPath, audioPath)
-  
-  // Transcribe using Whisper
-  const transcription = yield* transcribeAudio(audioPath)
-  
-  // Store transcription segments
-  yield* storeTranscriptionSegments(episodeId, transcription)
-})
-```
-
-### 3. Embedding Generation
-
-```typescript
-const generateEmbeddings = Effect.gen(function* () {
-  const transcriptions = yield* getTranscriptions(episodeId)
-  
-  for (const segment of transcriptions) {
-    const embedding = yield* createEmbedding(segment.text)
-    yield* storeEmbedding(segment.id, embedding)
-  }
-})
-```
-
-### 4. Thumbnail Extraction
-
-```typescript
-const extractThumbnails = Effect.gen(function* () {
-  // Extract thumbnails every 30 seconds
-  const intervals = yield* calculateThumbnailIntervals(duration)
-  
-  for (const timestamp of intervals) {
-    yield* extractThumbnail(videoPath, timestamp, outputPath)
-    yield* storeThumbnailInfo(episodeId, timestamp, outputPath)
-  }
-})
-```
-
 ## Frontend Features
 
 ### 1. Search Interface
@@ -327,7 +283,7 @@ const extractThumbnails = Effect.gen(function* () {
 ```typescript
 const importEpisodeMetadata = Effect.gen(function* () {
   const seasons = yield* fetchSimpsonsSeasons()
-  
+
   for (const season of seasons) {
     const episodes = yield* fetchSeasonEpisodes(season.number)
     yield* storeEpisodeMetadata(episodes)
@@ -340,7 +296,6 @@ const importEpisodeMetadata = Effect.gen(function* () {
 - Free alternative to TMDB
 - Good coverage of TV show data
 - No API key required
-
 
 ## Development Phases
 
@@ -391,179 +346,241 @@ PROCESSED_DATA_PATH="/path/to/processed/data"
 
 ```typescript
 // Episodes domain service
-class EpisodesService extends Effect.Service<EpisodesService>()("EpisodesService", {
-  scoped: Effect.gen(function* () {
-    const repository = yield* EpisodesRepository
-    const videoProcessor = yield* VideoProcessorService
-    const transcription = yield* TranscriptionService
+class EpisodesService extends Effect.Service<EpisodesService>()(
+  "EpisodesService",
+  {
+    scoped: Effect.gen(function* () {
+      const repository = yield* EpisodesRepository
+      const videoProcessor = yield* VideoProcessorService
+      const transcription = yield* TranscriptionService
 
-    const scanVideoFiles = (inputPath: string) =>
-      Effect.gen(function* () {
-        const files = yield* videoProcessor.discoverVideoFiles(inputPath)
-        const episodes = yield* Effect.forEach(files, (file) =>
-          Effect.gen(function* () {
-            const metadata = yield* videoProcessor.extractMetadata(file)
-            return yield* repository.create({
-              filePath: file.path,
-              fileSize: file.size,
-              duration: metadata.duration,
-              videoCodec: metadata.videoCodec,
-              audioCodec: metadata.audioCodec,
-              resolution: metadata.resolution
+      const scanVideoFiles = (inputPath: string) =>
+        Effect.gen(function* () {
+          const files = yield* videoProcessor.discoverVideoFiles(inputPath)
+          const episodes = yield* Effect.forEach(files, (file) =>
+            Effect.gen(function* () {
+              const metadata = yield* videoProcessor.extractMetadata(file)
+              return yield* repository.create({
+                filePath: file.path,
+                fileSize: file.size,
+                duration: metadata.duration,
+                videoCodec: metadata.videoCodec,
+                audioCodec: metadata.audioCodec,
+                resolution: metadata.resolution
+              })
             })
-          })
+          )
+          return episodes
+        }).pipe(
+          Effect.annotateSpan("scanVideoFiles", { inputPath }),
+          Effect.withSpan("EpisodesService.scanVideoFiles")
         )
-        return episodes
-      }).pipe(
-        Effect.annotateSpan("scanVideoFiles", { inputPath }),
-        Effect.withSpan("EpisodesService.scanVideoFiles")
-      )
 
-    const processEpisode = (episodeId: string) =>
-      Effect.gen(function* () {
-        const episode = yield* repository.findById(episodeId)
-        yield* transcription.processEpisode(episode)
-        return episode
-      }).pipe(
-        Effect.annotateSpan("processEpisode", { episodeId }),
-        Effect.withSpan("EpisodesService.processEpisode")
-      )
+      const processEpisode = (episodeId: string) =>
+        Effect.gen(function* () {
+          const episode = yield* repository.findById(episodeId)
+          yield* transcription.processEpisode(episode)
+          return episode
+        }).pipe(
+          Effect.annotateSpan("processEpisode", { episodeId }),
+          Effect.withSpan("EpisodesService.processEpisode")
+        )
 
-    return { scanVideoFiles, processEpisode }
-  })
-}) {}
+      return { scanVideoFiles, processEpisode }
+    })
+  }
+) {}
 
 // Embeddings domain service
-class EmbeddingsService extends Effect.Service<EmbeddingsService>()("EmbeddingsService", {
-  scoped: Effect.gen(function* () {
-    const repository = yield* EmbeddingsRepository
-    const transcriptionRepo = yield* TranscriptionRepository
-    const openai = yield* OpenAIService
+class EmbeddingsService extends Effect.Service<EmbeddingsService>()(
+  "EmbeddingsService",
+  {
+    scoped: Effect.gen(function* () {
+      const repository = yield* EmbeddingsRepository
+      const transcriptionRepo = yield* TranscriptionRepository
+      const openai = yield* OpenAIService
 
-    const generateEmbeddings = (episodeId: string) =>
-      Effect.gen(function* () {
-        const transcriptions = yield* transcriptionRepo.findByEpisodeId(episodeId)
-        
-        const embeddings = yield* Effect.forEach(transcriptions, (segment) =>
-          Effect.gen(function* () {
-            const embedding = yield* openai.createEmbedding(segment.text)
-            return yield* repository.create({
-              transcriptionId: segment.id,
-              embedding: embedding.data[0].embedding
+      const generateEmbeddings = (episodeId: string) =>
+        Effect.gen(function* () {
+          const transcriptions = yield* transcriptionRepo.findByEpisodeId(
+            episodeId
+          )
+
+          const embeddings = yield* Effect.forEach(transcriptions, (segment) =>
+            Effect.gen(function* () {
+              const embedding = yield* openai.createEmbedding(segment.text)
+              return yield* repository.create({
+                transcriptionId: segment.id,
+                embedding: embedding.data[0].embedding
+              })
             })
-          })
-        )
-        
-        return embeddings
-      }).pipe(
-        Effect.annotateSpan("generateEmbeddings", { episodeId }),
-        Effect.withSpan("EmbeddingsService.generateEmbeddings")
-      )
+          )
 
-    const semanticSearch = (query: string, limit: number = 10) =>
-      Effect.gen(function* () {
-        const queryEmbedding = yield* openai.createEmbedding(query)
-        const results = yield* repository.findSimilar(
-          queryEmbedding.data[0].embedding,
-          limit
+          return embeddings
+        }).pipe(
+          Effect.annotateSpan("generateEmbeddings", { episodeId }),
+          Effect.withSpan("EmbeddingsService.generateEmbeddings")
         )
-        return results
-      }).pipe(
-        Effect.annotateSpan("semanticSearch", { query, limit }),
-        Effect.withSpan("EmbeddingsService.semanticSearch")
-      )
 
-    return { generateEmbeddings, semanticSearch }
-  })
-}) {}
+      const semanticSearch = (query: string, limit: number = 10) =>
+        Effect.gen(function* () {
+          const queryEmbedding = yield* openai.createEmbedding(query)
+          const results = yield* repository.findSimilar(
+            queryEmbedding.data[0].embedding,
+            limit
+          )
+          return results
+        }).pipe(
+          Effect.annotateSpan("semanticSearch", { query, limit }),
+          Effect.withSpan("EmbeddingsService.semanticSearch")
+        )
+
+      return { generateEmbeddings, semanticSearch }
+    })
+  }
+) {}
 
 // Video processing service
-class VideoProcessorService extends Effect.Service<VideoProcessorService>()("VideoProcessorService", {
-  scoped: Effect.gen(function* () {
-    const ffmpeg = yield* FFmpegService
+class VideoProcessorService extends Effect.Service<VideoProcessorService>()(
+  "VideoProcessorService",
+  {
+    scoped: Effect.gen(function* () {
+      const ffmpeg = yield* FFmpegService
 
-    const extractThumbnails = (videoPath: string, outputDir: string) =>
-      Effect.gen(function* () {
-        const duration = yield* ffmpeg.getDuration(videoPath)
-        const intervals = Array.from(
-          { length: Math.floor(duration / 30) },
-          (_, i) => i * 30
+      const extractThumbnails = (videoPath: string, outputDir: string) =>
+        Effect.gen(function* () {
+          const duration = yield* ffmpeg.getDuration(videoPath)
+          const intervals = Array.from(
+            { length: Math.floor(duration / 30) },
+            (_, i) => i * 30
+          )
+
+          const thumbnails = yield* Effect.forEach(intervals, (timestamp) =>
+            ffmpeg.extractFrame(
+              videoPath,
+              timestamp,
+              `${outputDir}/thumb_${timestamp}.jpg`
+            )
+          )
+
+          return thumbnails
+        }).pipe(
+          Effect.annotateSpan("extractThumbnails", { videoPath }),
+          Effect.withSpan("VideoProcessorService.extractThumbnails")
         )
-        
-        const thumbnails = yield* Effect.forEach(intervals, (timestamp) =>
-          ffmpeg.extractFrame(videoPath, timestamp, `${outputDir}/thumb_${timestamp}.jpg`)
+
+      const createClip = (
+        videoPath: string,
+        startTime: number,
+        endTime: number,
+        outputPath: string
+      ) =>
+        ffmpeg.createClip(videoPath, startTime, endTime, outputPath).pipe(
+          Effect.annotateSpan("createClip", {
+            videoPath,
+            startTime,
+            endTime
+          }),
+          Effect.withSpan("VideoProcessorService.createClip")
         )
-        
-        return thumbnails
-      }).pipe(
-        Effect.annotateSpan("extractThumbnails", { videoPath }),
-        Effect.withSpan("VideoProcessorService.extractThumbnails")
-      )
 
-    const createClip = (videoPath: string, startTime: number, endTime: number, outputPath: string) =>
-      ffmpeg.createClip(videoPath, startTime, endTime, outputPath).pipe(
-        Effect.annotateSpan("createClip", { videoPath, startTime, endTime }),
-        Effect.withSpan("VideoProcessorService.createClip")
-      )
-
-    return { extractThumbnails, createClip }
-  })
-}) {}
+      return { extractThumbnails, createClip }
+    })
+  }
+) {}
 ```
 
 ### Repository Layer (Data Access)
 
 ```typescript
 // Episodes repository interface
-abstract class EpisodesRepository extends Effect.Service<EpisodesRepository>()("EpisodesRepository", {
-  accessors: true
-}) {
-  abstract create: (data: CreateEpisodeData) => Effect.Effect<Episode, DatabaseError>
-  abstract findById: (id: string) => Effect.Effect<Episode, DatabaseError | NotFoundError>
-  abstract findBySeasonAndEpisode: (season: number, episode: number) => Effect.Effect<Episode, DatabaseError | NotFoundError>
-  abstract findAll: (filters?: EpisodeFilters) => Effect.Effect<Episode[], DatabaseError>
-  abstract update: (id: string, data: UpdateEpisodeData) => Effect.Effect<Episode, DatabaseError | NotFoundError>
-  abstract delete: (id: string) => Effect.Effect<void, DatabaseError | NotFoundError>
+abstract class EpisodesRepository extends Effect.Service<EpisodesRepository>()(
+  "EpisodesRepository",
+  {
+    accessors: true
+  }
+) {
+  abstract create: (
+    data: CreateEpisodeData
+  ) => Effect.Effect<Episode, DatabaseError>
+  abstract findById: (
+    id: string
+  ) => Effect.Effect<Episode, DatabaseError | NotFoundError>
+  abstract findBySeasonAndEpisode: (
+    season: number,
+    episode: number
+  ) => Effect.Effect<Episode, DatabaseError | NotFoundError>
+  abstract findAll: (
+    filters?: EpisodeFilters
+  ) => Effect.Effect<Episode[], DatabaseError>
+  abstract update: (
+    id: string,
+    data: UpdateEpisodeData
+  ) => Effect.Effect<Episode, DatabaseError | NotFoundError>
+  abstract delete: (
+    id: string
+  ) => Effect.Effect<void, DatabaseError | NotFoundError>
 }
 
 // Drizzle schema definitions
-import { pgTable, uuid, varchar, integer, decimal, timestamp, vector, text, bigint } from 'drizzle-orm/pg-core'
+import {
+  pgTable,
+  uuid,
+  varchar,
+  integer,
+  decimal,
+  timestamp,
+  vector,
+  text,
+  bigint
+} from "drizzle-orm/pg-core"
 
-const episodes = pgTable('episodes', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  seasonNumber: integer('season_number').notNull(),
-  episodeNumber: integer('episode_number').notNull(),
-  title: varchar('title', { length: 255 }),
-  airDate: timestamp('air_date', { mode: 'date' }),
-  description: text('description'),
-  imdbId: varchar('imdb_id', { length: 20 }),
-  tvdbId: integer('tvdb_id'),
-  filePath: varchar('file_path', { length: 500 }).notNull(),
-  fileSize: bigint('file_size', { mode: 'number' }),
-  durationSeconds: integer('duration_seconds'),
-  videoCodec: varchar('video_codec', { length: 50 }),
-  audioCodec: varchar('audio_codec', { length: 50 }),
-  resolution: varchar('resolution', { length: 20 }),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+const episodes = pgTable("episodes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  seasonNumber: integer("season_number").notNull(),
+  episodeNumber: integer("episode_number").notNull(),
+  title: varchar("title", { length: 255 }),
+  airDate: timestamp("air_date", { mode: "date" }),
+  description: text("description"),
+  imdbId: varchar("imdb_id", { length: 20 }),
+  tvdbId: integer("tvdb_id"),
+  filePath: varchar("file_path", { length: 500 }).notNull(),
+  fileSize: bigint("file_size", { mode: "number" }),
+  durationSeconds: integer("duration_seconds"),
+  videoCodec: varchar("video_codec", { length: 50 }),
+  audioCodec: varchar("audio_codec", { length: 50 }),
+  resolution: varchar("resolution", { length: 20 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 })
 
-const transcriptions = pgTable('transcriptions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  episodeId: uuid('episode_id').references(() => episodes.id, { onDelete: 'cascade' }),
-  startTimeSeconds: decimal('start_time_seconds', { precision: 10, scale: 3 }).notNull(),
-  endTimeSeconds: decimal('end_time_seconds', { precision: 10, scale: 3 }).notNull(),
-  text: text('text').notNull(),
-  confidence: decimal('confidence', { precision: 4, scale: 3 }),
-  speaker: varchar('speaker', { length: 100 }),
-  createdAt: timestamp('created_at').defaultNow()
+const transcriptions = pgTable("transcriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  episodeId: uuid("episode_id").references(() => episodes.id, {
+    onDelete: "cascade"
+  }),
+  startTimeSeconds: decimal("start_time_seconds", {
+    precision: 10,
+    scale: 3
+  }).notNull(),
+  endTimeSeconds: decimal("end_time_seconds", {
+    precision: 10,
+    scale: 3
+  }).notNull(),
+  text: text("text").notNull(),
+  confidence: decimal("confidence", { precision: 4, scale: 3 }),
+  speaker: varchar("speaker", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow()
 })
 
-const transcriptionEmbeddings = pgTable('transcription_embeddings', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  transcriptionId: uuid('transcription_id').references(() => transcriptions.id, { onDelete: 'cascade' }),
-  embedding: vector('embedding', { dimensions: 1536 }).notNull(),
-  createdAt: timestamp('created_at').defaultNow()
+const transcriptionEmbeddings = pgTable("transcription_embeddings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  transcriptionId: uuid("transcription_id").references(
+    () => transcriptions.id,
+    { onDelete: "cascade" }
+  ),
+  embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow()
 })
 
 // @effect/sql-drizzle-pg implementation
@@ -575,19 +592,29 @@ class DrizzleEpisodesRepository extends EpisodesRepository {
     const db = yield* DrizzlePgClient
 
     const create = (data: CreateEpisodeData) =>
-      db.insert(episodes).values(data).returning().pipe(
-        Effect.map((rows) => rows[0] as Episode),
-        Effect.mapError((error) => new DatabaseError({ cause: error }))
-      )
+      db
+        .insert(episodes)
+        .values(data)
+        .returning()
+        .pipe(
+          Effect.map((rows) => rows[0] as Episode),
+          Effect.mapError((error) => new DatabaseError({ cause: error }))
+        )
 
     const findById = (id: string) =>
-      db.select().from(episodes).where(eq(episodes.id, id)).pipe(
-        Effect.map((rows) => rows[0] as Episode | undefined),
-        Effect.flatMap((episode) =>
-          episode ? Effect.succeed(episode) : Effect.fail(new NotFoundError({ id }))
-        ),
-        Effect.mapError((error) => new DatabaseError({ cause: error }))
-      )
+      db
+        .select()
+        .from(episodes)
+        .where(eq(episodes.id, id))
+        .pipe(
+          Effect.map((rows) => rows[0] as Episode | undefined),
+          Effect.flatMap((episode) =>
+            episode
+              ? Effect.succeed(episode)
+              : Effect.fail(new NotFoundError({ id }))
+          ),
+          Effect.mapError((error) => new DatabaseError({ cause: error }))
+        )
 
     const findAll = (filters?: EpisodeFilters) =>
       Effect.gen(function* () {
@@ -595,36 +622,61 @@ class DrizzleEpisodesRepository extends EpisodesRepository {
         if (filters) {
           query = query.where(buildDrizzleWhereClause(filters))
         }
-        return yield* query.orderBy(episodes.seasonNumber, episodes.episodeNumber)
+        return yield* query.orderBy(
+          episodes.seasonNumber,
+          episodes.episodeNumber
+        )
       }).pipe(
         Effect.map((rows) => rows as Episode[]),
         Effect.mapError((error) => new DatabaseError({ cause: error }))
       )
 
     const findBySeasonAndEpisode = (season: number, episode: number) =>
-      db.select().from(episodes)
-        .where(and(
-          eq(episodes.seasonNumber, season),
-          eq(episodes.episodeNumber, episode)
-        )).pipe(
+      db
+        .select()
+        .from(episodes)
+        .where(
+          and(
+            eq(episodes.seasonNumber, season),
+            eq(episodes.episodeNumber, episode)
+          )
+        )
+        .pipe(
           Effect.map((rows) => rows[0] as Episode | undefined),
           Effect.flatMap((ep) =>
-            ep ? Effect.succeed(ep) : Effect.fail(new NotFoundError({ season, episode }))
+            ep
+              ? Effect.succeed(ep)
+              : Effect.fail(new NotFoundError({ season, episode }))
           ),
           Effect.mapError((error) => new DatabaseError({ cause: error }))
         )
 
-    return EpisodesRepository.of({ create, findById, findAll, findBySeasonAndEpisode })
+    return EpisodesRepository.of({
+      create,
+      findById,
+      findAll,
+      findBySeasonAndEpisode
+    })
   }).pipe(Effect.scoped)
 }
 
 // Transcription Embeddings repository
-abstract class TranscriptionEmbeddingsRepository extends Effect.Service<TranscriptionEmbeddingsRepository>()("TranscriptionEmbeddingsRepository", {
-  accessors: true
-}) {
-  abstract create: (data: CreateTranscriptionEmbeddingData) => Effect.Effect<TranscriptionEmbedding, DatabaseError>
-  abstract findSimilar: (vector: number[], limit: number) => Effect.Effect<SimilarityResult[], DatabaseError>
-  abstract findByTranscriptionId: (transcriptionId: string) => Effect.Effect<TranscriptionEmbedding[], DatabaseError>
+abstract class TranscriptionEmbeddingsRepository extends Effect.Service<TranscriptionEmbeddingsRepository>()(
+  "TranscriptionEmbeddingsRepository",
+  {
+    accessors: true
+  }
+) {
+  abstract create: (
+    data: CreateTranscriptionEmbeddingData
+  ) => Effect.Effect<TranscriptionEmbedding, DatabaseError>
+  abstract findSimilar: (
+    vector: number[],
+    limit: number
+  ) => Effect.Effect<SimilarityResult[], DatabaseError>
+  abstract findByTranscriptionId: (
+    transcriptionId: string
+  ) => Effect.Effect<TranscriptionEmbedding[], DatabaseError>
 }
 
 class DrizzleTranscriptionEmbeddingsRepository extends TranscriptionEmbeddingsRepository {
@@ -632,13 +684,19 @@ class DrizzleTranscriptionEmbeddingsRepository extends TranscriptionEmbeddingsRe
     const db = yield* DrizzlePgClient
 
     const create = (data: CreateTranscriptionEmbeddingData) =>
-      db.insert(transcriptionEmbeddings).values(data).returning().pipe(
-        Effect.map((rows) => rows[0] as TranscriptionEmbedding),
-        Effect.mapError((error) => new DatabaseError({ cause: error }))
-      )
+      db
+        .insert(transcriptionEmbeddings)
+        .values(data)
+        .returning()
+        .pipe(
+          Effect.map((rows) => rows[0] as TranscriptionEmbedding),
+          Effect.mapError((error) => new DatabaseError({ cause: error }))
+        )
 
     const findSimilar = (vector: number[], limit: number) =>
-      db.execute(sql`
+      db
+        .execute(
+          sql`
         SELECT e.*, t.text, t.start_time_seconds, t.end_time_seconds, 
                ep.title, ep.season_number, ep.episode_number,
                1 - (e.embedding <=> ${vector}::vector) as similarity
@@ -647,29 +705,49 @@ class DrizzleTranscriptionEmbeddingsRepository extends TranscriptionEmbeddingsRe
         JOIN ${episodes} ep ON t.episode_id = ep.id
         ORDER BY e.embedding <=> ${vector}::vector
         LIMIT ${limit}
-      `).pipe(
-        Effect.map((result) => result.rows as SimilarityResult[]),
-        Effect.mapError((error) => new DatabaseError({ cause: error }))
-      )
+      `
+        )
+        .pipe(
+          Effect.map((result) => result.rows as SimilarityResult[]),
+          Effect.mapError((error) => new DatabaseError({ cause: error }))
+        )
 
     const findByTranscriptionId = (transcriptionId: string) =>
-      db.select().from(transcriptionEmbeddings)
-        .where(eq(transcriptionEmbeddings.transcriptionId, transcriptionId)).pipe(
+      db
+        .select()
+        .from(transcriptionEmbeddings)
+        .where(eq(transcriptionEmbeddings.transcriptionId, transcriptionId))
+        .pipe(
           Effect.map((rows) => rows as TranscriptionEmbedding[]),
           Effect.mapError((error) => new DatabaseError({ cause: error }))
         )
 
-    return TranscriptionEmbeddingsRepository.of({ create, findSimilar, findByTranscriptionId })
+    return TranscriptionEmbeddingsRepository.of({
+      create,
+      findSimilar,
+      findByTranscriptionId
+    })
   }).pipe(Effect.scoped)
 }
 
 // Transcription repository
-abstract class TranscriptionRepository extends Effect.Service<TranscriptionRepository>()("TranscriptionRepository", {
-  accessors: true
-}) {
-  abstract create: (data: CreateTranscriptionData) => Effect.Effect<Transcription, DatabaseError>
-  abstract findByEpisodeId: (episodeId: string) => Effect.Effect<Transcription[], DatabaseError>
-  abstract findByTimeRange: (episodeId: string, startTime: number, endTime: number) => Effect.Effect<Transcription[], DatabaseError>
+abstract class TranscriptionRepository extends Effect.Service<TranscriptionRepository>()(
+  "TranscriptionRepository",
+  {
+    accessors: true
+  }
+) {
+  abstract create: (
+    data: CreateTranscriptionData
+  ) => Effect.Effect<Transcription, DatabaseError>
+  abstract findByEpisodeId: (
+    episodeId: string
+  ) => Effect.Effect<Transcription[], DatabaseError>
+  abstract findByTimeRange: (
+    episodeId: string,
+    startTime: number,
+    endTime: number
+  ) => Effect.Effect<Transcription[], DatabaseError>
 }
 ```
 
@@ -677,21 +755,45 @@ abstract class TranscriptionRepository extends Effect.Service<TranscriptionRepos
 
 ```typescript
 // OpenAI service
-abstract class OpenAIService extends Effect.Service<OpenAIService>()("OpenAIService", {
-  accessors: true
-}) {
-  abstract createEmbedding: (text: string) => Effect.Effect<EmbeddingResponse, OpenAIError>
-  abstract transcribeAudio: (audioPath: string) => Effect.Effect<TranscriptionResponse, OpenAIError>
+abstract class OpenAIService extends Effect.Service<OpenAIService>()(
+  "OpenAIService",
+  {
+    accessors: true
+  }
+) {
+  abstract createEmbedding: (
+    text: string
+  ) => Effect.Effect<EmbeddingResponse, OpenAIError>
+  abstract transcribeAudio: (
+    audioPath: string
+  ) => Effect.Effect<TranscriptionResponse, OpenAIError>
 }
 
 // FFmpeg service
-abstract class FFmpegService extends Effect.Service<FFmpegService>()("FFmpegService", {
-  accessors: true
-}) {
-  abstract extractAudio: (videoPath: string, audioPath: string) => Effect.Effect<void, FFmpegError>
-  abstract extractFrame: (videoPath: string, timestamp: number, outputPath: string) => Effect.Effect<string, FFmpegError>
-  abstract createClip: (videoPath: string, startTime: number, endTime: number, outputPath: string) => Effect.Effect<string, FFmpegError>
-  abstract getDuration: (videoPath: string) => Effect.Effect<number, FFmpegError>
+abstract class FFmpegService extends Effect.Service<FFmpegService>()(
+  "FFmpegService",
+  {
+    accessors: true
+  }
+) {
+  abstract extractAudio: (
+    videoPath: string,
+    audioPath: string
+  ) => Effect.Effect<void, FFmpegError>
+  abstract extractFrame: (
+    videoPath: string,
+    timestamp: number,
+    outputPath: string
+  ) => Effect.Effect<string, FFmpegError>
+  abstract createClip: (
+    videoPath: string,
+    startTime: number,
+    endTime: number,
+    outputPath: string
+  ) => Effect.Effect<string, FFmpegError>
+  abstract getDuration: (
+    videoPath: string
+  ) => Effect.Effect<number, FFmpegError>
 }
 ```
 
@@ -705,7 +807,11 @@ class MockEpisodesRepository extends EpisodesRepository {
 
     const create = (data: CreateEpisodeData) =>
       Effect.sync(() => {
-        const episode = { id: crypto.randomUUID(), ...data, createdAt: new Date() }
+        const episode = {
+          id: crypto.randomUUID(),
+          ...data,
+          createdAt: new Date()
+        }
         episodes.set(episode.id, episode)
         return episode
       })

@@ -1,3 +1,5 @@
+import { Episode as DomainEpisode } from "@simpsons-db/domain"
+import { PaginatedResponse } from "@simpsons-db/shared"
 import { Schema } from "effect"
 
 // Health Check Schemas
@@ -7,25 +9,15 @@ export const HealthResponse = Schema.Struct({
   service: Schema.String
 })
 
-// Episode API Response Schema (for API responses only)
-export const EpisodeResponse = Schema.Struct({
-  id: Schema.UUID,
-  filePath: Schema.String,
-  fileName: Schema.String,
-  fileSize: Schema.Number,
+// Episode API Response extends domain entity with API-specific fields
+export const EpisodeResponse = DomainEpisode.pipe(Schema.extend(Schema.Struct({
   duration: Schema.optional(Schema.Number),
-  season: Schema.optional(Schema.Number),
-  episodeNumber: Schema.optional(Schema.Number),
-  title: Schema.optional(Schema.String),
-  description: Schema.optional(Schema.String),
-  airDate: Schema.optional(Schema.DateTimeUtc),
   processed: Schema.Boolean,
   hasTranscription: Schema.Boolean,
-  hasMetadata: Schema.Boolean,
-  createdAt: Schema.DateTimeUtc,
-  updatedAt: Schema.DateTimeUtc
-})
+  hasMetadata: Schema.Boolean
+})))
 
+// Create episode request - package-specific
 export const CreateEpisodeRequest = Schema.Struct({
   filePath: Schema.String.pipe(Schema.minLength(1))
 })
@@ -39,16 +31,7 @@ export const GetEpisodesQuery = Schema.Struct({
   hasMetadata: Schema.optional(Schema.Literal("true", "false"))
 })
 
-export const PaginatedResponse = <A, I, R>(itemSchema: Schema.Schema<A, I, R>) =>
-  Schema.Struct({
-    data: Schema.Array(itemSchema),
-    pagination: Schema.Struct({
-      page: Schema.Number,
-      limit: Schema.Number,
-      total: Schema.Number,
-      totalPages: Schema.Number
-    })
-  })
+// Using PaginatedResponse from shared package
 
 export const EpisodesResponse = PaginatedResponse(EpisodeResponse)
 
@@ -57,29 +40,25 @@ export const EpisodeIdParam = Schema.Struct({
   id: Schema.UUID
 })
 
-// Error Schemas
-export class ValidationError extends Schema.TaggedError<ValidationError>()(
-  "ValidationError",
-  {
-    message: Schema.String,
-    errors: Schema.optional(Schema.Array(Schema.String))
-  }
-) {}
-
-export class NotFoundError extends Schema.TaggedError<NotFoundError>()(
-  "NotFoundError",
-  {
-    message: Schema.String,
-    resource: Schema.String
-  }
-) {}
-
-export class InternalServerError extends Schema.TaggedError<InternalServerError>()(
-  "InternalServerError",
-  {
+// API Error schemas - package-specific
+export const ValidationError = Schema.Struct({
+  error: Schema.Literal("VALIDATION_ERROR"),
+  message: Schema.String,
+  details: Schema.optional(Schema.Array(Schema.Struct({
+    field: Schema.String,
     message: Schema.String
-  }
-) {}
+  })))
+})
+
+export const NotFoundError = Schema.Struct({
+  error: Schema.Literal("NOT_FOUND"),
+  message: Schema.String
+})
+
+export const InternalServerError = Schema.Struct({
+  error: Schema.Literal("INTERNAL_SERVER_ERROR"),
+  message: Schema.String
+})
 
 // Search Schemas
 export const SearchQuery = Schema.Struct({

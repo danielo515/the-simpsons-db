@@ -14,12 +14,13 @@ export const thumbnails = pgTable("thumbnails", {
   format: varchar("format", { length: 10 }).notNull().default("jpg"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
-}, (table) => ({
-  episodeIdIdx: index("thumbnails_episode_id_idx").on(table.episodeId),
-  timestampIdx: index("thumbnails_timestamp_idx").on(table.episodeId, table.timestamp),
-  filePathIdx: index("thumbnails_file_path_idx").on(table.filePath)
-}))
+}, (table) => [
+  index("thumbnails_episode_id_idx").on(table.episodeId),
+  index("thumbnails_timestamp_idx").on(table.episodeId, table.timestamp),
+  index("thumbnails_file_path_idx").on(table.filePath)
+])
 
+// Thumbnail schema - package-specific
 export const ThumbnailSchema = Schema.Struct({
   id: Schema.UUID,
   episodeId: Schema.UUID,
@@ -34,16 +35,11 @@ export const ThumbnailSchema = Schema.Struct({
   updatedAt: Schema.DateFromSelf
 })
 
-export const NewThumbnailSchema = Schema.Struct({
-  episodeId: Schema.UUID,
-  timestamp: Schema.String.pipe(Schema.pattern(/^\d+(\.\d{1,3})?$/)),
-  filePath: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(1000)),
-  fileName: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(255)),
-  width: Schema.Number.pipe(Schema.int(), Schema.positive()),
-  height: Schema.Number.pipe(Schema.int(), Schema.positive()),
-  fileSize: Schema.Number.pipe(Schema.int(), Schema.positive()),
+export const NewThumbnailSchema = ThumbnailSchema.pipe(
+  Schema.omit("id", "createdAt", "updatedAt")
+).pipe(Schema.extend(Schema.Struct({
   format: Schema.optional(Schema.String.pipe(Schema.maxLength(10)))
-})
+})))
 
 export type Thumbnail = typeof ThumbnailSchema.Type
 export type NewThumbnail = typeof NewThumbnailSchema.Type

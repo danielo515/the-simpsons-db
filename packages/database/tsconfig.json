@@ -1,6 +1,14 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": [],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@simpsons-db/domain": ["../domain/src/index.js"],
+      "@simpsons-db/domain/*": ["../domain/src/*"]
+    }
+  },
   "references": [
     { "path": "tsconfig.src.json" },
     { "path": "tsconfig.test.json" }

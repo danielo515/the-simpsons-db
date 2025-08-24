@@ -1,57 +1,50 @@
-import { ProcessingStatus, VideoMetadata } from "@simpsons-db/shared"
+import { BaseFields, FilePath, ProcessingStatus, VideoMetadata } from "@simpsons-db/shared"
 import { Schema } from "effect"
 
+// Core Episode domain entity
 export const Episode = Schema.Struct({
-  id: Schema.UUID,
-  filePath: Schema.String,
-  fileName: Schema.String,
-  fileSize: Schema.Number.pipe(Schema.int(), Schema.positive()),
-  checksum: Schema.String.pipe(Schema.length(64)),
-  mimeType: Schema.optional(Schema.String),
+  id: BaseFields.id,
+  filePath: FilePath,
+  fileName: BaseFields.fileName,
+  fileSize: BaseFields.fileSize,
+  checksum: BaseFields.checksum,
+  mimeType: BaseFields.optionalString(100),
   videoMetadata: Schema.optional(VideoMetadata),
   processingStatus: ProcessingStatus,
   transcriptionStatus: ProcessingStatus,
   thumbnailStatus: ProcessingStatus,
   metadataStatus: ProcessingStatus,
-  season: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  episodeNumber: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  title: Schema.optional(Schema.String),
-  description: Schema.optional(Schema.String),
-  airDate: Schema.optional(Schema.DateFromSelf),
-  createdAt: Schema.DateFromSelf,
-  updatedAt: Schema.DateFromSelf,
-  processedAt: Schema.optional(Schema.DateFromSelf),
-  errorMessage: Schema.optional(Schema.String)
+  season: BaseFields.positiveInt,
+  episodeNumber: BaseFields.positiveInt,
+  title: BaseFields.shortString(255),
+  description: BaseFields.optionalString(1000),
+  airDate: BaseFields.optionalDate
 })
 
 export type Episode = typeof Episode.Type
 
-export const CreateEpisodeRequest = Schema.Struct({
-  filePath: Schema.String.pipe(Schema.minLength(1)),
-  fileName: Schema.String.pipe(Schema.minLength(1)),
-  fileSize: Schema.Number.pipe(Schema.int(), Schema.positive()),
-  checksum: Schema.String.pipe(Schema.length(64)),
-  mimeType: Schema.optional(Schema.String),
-  videoMetadata: Schema.optional(VideoMetadata),
-  season: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  episodeNumber: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive()))
-})
-
-export type CreateEpisodeRequest = typeof CreateEpisodeRequest.Type
+// Domain request types for episode operations
+export const CreateEpisodeRequest = Episode.pipe(
+  Schema.omit(
+    "id",
+    "createdAt",
+    "updatedAt",
+    "processedAt",
+    "processingStatus",
+    "transcriptionStatus",
+    "thumbnailStatus",
+    "metadataStatus",
+    "errorMessage"
+  )
+)
 
 export const UpdateEpisodeRequest = Schema.Struct({
-  id: Schema.UUID,
-  processingStatus: Schema.optional(ProcessingStatus),
-  transcriptionStatus: Schema.optional(ProcessingStatus),
-  thumbnailStatus: Schema.optional(ProcessingStatus),
-  metadataStatus: Schema.optional(ProcessingStatus),
-  videoMetadata: Schema.optional(VideoMetadata),
-  title: Schema.optional(Schema.String),
-  description: Schema.optional(Schema.String),
-  airDate: Schema.optional(Schema.DateFromSelf),
-  season: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  episodeNumber: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  errorMessage: Schema.optional(Schema.String)
-})
+  id: BaseFields.id
+}).pipe(Schema.extend(
+  Episode.pipe(
+    Schema.omit("id", "filePath", "fileName", "fileSize", "checksum", "mimeType", "createdAt", "updatedAt")
+  ).pipe(Schema.partial)
+))
 
+export type CreateEpisodeRequest = typeof CreateEpisodeRequest.Type
 export type UpdateEpisodeRequest = typeof UpdateEpisodeRequest.Type

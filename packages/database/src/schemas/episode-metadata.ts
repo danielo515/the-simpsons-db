@@ -22,56 +22,38 @@ export const episodeMetadata = pgTable("episode_metadata", {
   rawData: jsonb("raw_data"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
-}, (table) => ({
-  episodeIdIdx: index("episode_metadata_episode_id_idx").on(table.episodeId),
-  sourceIdx: index("episode_metadata_source_idx").on(table.source),
-  externalIdIdx: index("episode_metadata_external_id_idx").on(table.source, table.externalId),
-  seasonEpisodeIdx: index("episode_metadata_season_episode_idx").on(table.season, table.episodeNumber),
-  imdbIdIdx: index("episode_metadata_imdb_id_idx").on(table.imdbId),
-  tmdbIdIdx: index("episode_metadata_tmdb_id_idx").on(table.tmdbId),
-  tvmazeIdIdx: index("episode_metadata_tvmaze_id_idx").on(table.tvmazeId)
-}))
+}, (table) => [
+  index("episode_metadata_episode_id_idx").on(table.episodeId),
+  index("episode_metadata_source_idx").on(table.source),
+  index("episode_metadata_external_id_idx").on(table.source, table.externalId),
+  index("episode_metadata_season_episode_idx").on(table.season, table.episodeNumber)
+])
 
+// Episode metadata schema - package-specific
 export const EpisodeMetadataSchema = Schema.Struct({
   id: Schema.UUID,
   episodeId: Schema.UUID,
-  source: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(50)),
-  externalId: Schema.optional(Schema.String.pipe(Schema.maxLength(100))),
-  title: Schema.optional(Schema.String.pipe(Schema.maxLength(500))),
-  description: Schema.optional(Schema.String),
+  source: Schema.String.pipe(Schema.maxLength(50)),
+  externalId: Schema.String.pipe(Schema.maxLength(100)),
   season: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
   episodeNumber: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
+  title: Schema.optional(Schema.String),
+  description: Schema.optional(Schema.String),
   airDate: Schema.optional(Schema.DateFromSelf),
   imdbId: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
-  tmdbId: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  tvmazeId: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  rating: Schema.optional(Schema.String.pipe(Schema.maxLength(10))),
-  genres: Schema.optional(Schema.Unknown),
-  cast: Schema.optional(Schema.Unknown),
-  crew: Schema.optional(Schema.Unknown),
+  tmdbId: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
+  tvmazeId: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
   rawData: Schema.optional(Schema.Unknown),
   createdAt: Schema.DateFromSelf,
   updatedAt: Schema.DateFromSelf
 })
 
-export const NewEpisodeMetadataSchema = Schema.Struct({
-  episodeId: Schema.UUID,
-  source: Schema.String.pipe(Schema.minLength(1), Schema.maxLength(50)),
-  externalId: Schema.optional(Schema.String.pipe(Schema.maxLength(100))),
-  title: Schema.optional(Schema.String.pipe(Schema.maxLength(500))),
-  description: Schema.optional(Schema.String),
-  season: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  episodeNumber: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  airDate: Schema.optional(Schema.DateFromSelf),
-  imdbId: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
-  tmdbId: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  tvmazeId: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  rating: Schema.optional(Schema.String.pipe(Schema.maxLength(10))),
-  genres: Schema.optional(Schema.Unknown),
-  cast: Schema.optional(Schema.Unknown),
-  crew: Schema.optional(Schema.Unknown),
-  rawData: Schema.optional(Schema.Unknown)
-})
+export const NewEpisodeMetadataSchema = EpisodeMetadataSchema.pipe(
+  Schema.omit("id", "createdAt", "updatedAt")
+).pipe(Schema.extend(Schema.Struct({
+  source: Schema.optional(Schema.String.pipe(Schema.maxLength(50))),
+  externalId: Schema.optional(Schema.String.pipe(Schema.maxLength(100)))
+})))
 
 export type EpisodeMetadata = typeof EpisodeMetadataSchema.Type
 export type NewEpisodeMetadata = typeof NewEpisodeMetadataSchema.Type

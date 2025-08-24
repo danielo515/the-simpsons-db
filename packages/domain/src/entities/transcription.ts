@@ -1,41 +1,46 @@
-import { TranscriptionSegment } from "@simpsons-db/shared"
 import { Schema } from "effect"
+import { BaseFields } from "@simpsons-db/shared"
 
+// Core Transcription domain entity
 export const Transcription = Schema.Struct({
-  id: Schema.UUID,
-  episodeId: Schema.UUID,
+  id: BaseFields.id,
+  episodeId: BaseFields.episodeId,
+  segmentIndex: BaseFields.nonNegativeInt,
   startTime: Schema.Number.pipe(Schema.nonNegative()),
   endTime: Schema.Number.pipe(Schema.positive()),
-  text: Schema.String.pipe(Schema.minLength(1)),
-  confidence: Schema.optional(Schema.Number.pipe(Schema.between(0, 1))),
+  text: BaseFields.requiredText,
+  confidence: Schema.optional(BaseFields.confidenceNumber),
   speaker: Schema.optional(Schema.String),
-  language: Schema.optional(Schema.String.pipe(Schema.maxLength(10))),
-  createdAt: Schema.DateFromSelf
+  language: BaseFields.optionalString(10),
+  createdAt: BaseFields.createdAt
 })
 
 export type Transcription = typeof Transcription.Type
 
-export const CreateTranscriptionRequest = Schema.Struct({
-  episodeId: Schema.UUID,
-  segments: Schema.Array(TranscriptionSegment).pipe(Schema.minItems(1))
-})
-
-export type CreateTranscriptionRequest = typeof CreateTranscriptionRequest.Type
-
+// Core TranscriptionEmbedding domain entity
 export const TranscriptionEmbedding = Schema.Struct({
-  id: Schema.UUID,
-  transcriptionId: Schema.UUID,
+  id: BaseFields.id,
+  transcriptionId: BaseFields.transcriptionId,
   embedding: Schema.Array(Schema.Number).pipe(Schema.minItems(1536), Schema.maxItems(1536)),
-  model: Schema.String.pipe(Schema.minLength(1)),
-  createdAt: Schema.DateFromSelf
+  model: BaseFields.requiredText,
+  createdAt: BaseFields.createdAt
 })
 
 export type TranscriptionEmbedding = typeof TranscriptionEmbedding.Type
 
-export const CreateEmbeddingRequest = Schema.Struct({
-  transcriptionId: Schema.UUID,
-  text: Schema.String.pipe(Schema.minLength(1)),
-  model: Schema.String.pipe(Schema.minLength(1))
+// Domain request types for transcription operations
+export const CreateTranscriptionRequest = Schema.Struct({
+  episodeId: BaseFields.episodeId,
+  segments: Schema.Array(Transcription.pipe(
+    Schema.omit("id", "createdAt")
+  )).pipe(Schema.minItems(1))
 })
 
+export const CreateEmbeddingRequest = TranscriptionEmbedding.pipe(
+  Schema.omit("id", "createdAt", "embedding")
+).pipe(Schema.extend(Schema.Struct({
+  text: BaseFields.requiredText
+})))
+
+export type CreateTranscriptionRequest = typeof CreateTranscriptionRequest.Type
 export type CreateEmbeddingRequest = typeof CreateEmbeddingRequest.Type

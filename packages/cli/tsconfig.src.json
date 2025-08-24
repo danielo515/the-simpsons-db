@@ -2,11 +2,15 @@
   "extends": "../../tsconfig.base.json",
   "include": ["src"],
   "references": [
-    { "path": "../domain" } 
+    { "path": "../shared" },
+    { "path": "../database" },
+    { "path": "../domain" },
+    { "path": "../ai-services" },
+    { "path": "../video-processor" }
   ],
   "compilerOptions": {
     "types": ["node"],
-    "outDir": "build/src",
+    "outDir": "dist",
     "tsBuildInfoFile": ".tsbuildinfo/src.tsbuildinfo",
     "rootDir": "src"
   }

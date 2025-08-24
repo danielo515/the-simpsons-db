@@ -28,8 +28,8 @@
   },
   "dependencies": {
     "@effect/sql": "latest",
-    "@effect/sql-drizzle": "latest",
     "@effect/sql-pg": "^0.45.1",
+    "@simpsons-db/shared": "workspace:*",
     "drizzle-orm": "^0.44.4",
     "effect": "latest",
     "pg": "^8.16.3",
