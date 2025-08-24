@@ -233,27 +233,33 @@ importers:
 
   packages/database:
     dependencies:
+      '@effect/platform':
+        specifier: '*'
+        version: 0.90.6(effect@3.17.9)
+      '@effect/platform-node':
+        specifier: '*'
+        version: 0.96.0(@effect/cluster@0.48.2(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/workflow@0.9.2(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(@effect/rpc@0.69.1(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)
       '@effect/sql':
-        specifier: latest
+        specifier: '*'
         version: 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
       '@effect/sql-drizzle':
         specifier: ^0.43.0
-        version: 0.43.0(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7))(effect@3.17.9)
+        version: 0.43.0(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.13.1)(postgres@3.4.7))(effect@3.17.9)
       '@effect/sql-pg':
-        specifier: ^0.45.1
+        specifier: '*'
         version: 0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)
       '@simpsons-db/shared':
         specifier: workspace:*
         version: link:../shared
       drizzle-orm:
         specifier: ^0.44.4
-        version: 0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7)
+        version: 0.44.4(@types/pg@8.15.5)(pg@8.13.1)(postgres@3.4.7)
       effect:
-        specifier: latest
+        specifier: '*'
         version: 3.17.9
       pg:
-        specifier: ^8.16.3
-        version: 8.16.3
+        specifier: 8.13.1
+        version: 8.13.1
       postgres:
         specifier: ^3.4.7
         version: 3.4.7
@@ -2970,9 +2976,9 @@ packages:
     resolution: {integrity: sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==}
     engines: {node: '>=4'}
 
-  pg@8.16.3:
-    resolution: {integrity: sha512-enxc1h0jA/aq5oSDMvqyW3q89ra6XIIDZgCX9vkMrnz5DFTw/Ny3Li2lFQ+pt3L6MCgm/5o2o8HW9hiJji+xvw==}
-    engines: {node: '>= 16.0.0'}
+  pg@8.13.1:
+    resolution: {integrity: sha512-OUir1A0rPNZlX//c7ksiu7crsGZTKSOXJPgtNiHGIlC9H0lO+NC6ZDYksSgBYY/thSWhnSRBv8w1lieNNGATNQ==}
+    engines: {node: '>= 8.0.0'}
     peerDependencies:
       pg-native: '>=3.0.1'
     peerDependenciesMeta:
@@ -3976,10 +3982,10 @@ snapshots:
       '@effect/platform': 0.90.6(effect@3.17.9)
       effect: 3.17.9
 
-  '@effect/sql-drizzle@0.43.0(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7))(effect@3.17.9)':
+  '@effect/sql-drizzle@0.43.0(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.13.1)(postgres@3.4.7))(effect@3.17.9)':
     dependencies:
       '@effect/sql': 0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9)
-      drizzle-orm: 0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7)
+      drizzle-orm: 0.44.4(@types/pg@8.15.5)(pg@8.13.1)(postgres@3.4.7)
       effect: 3.17.9
 
   '@effect/sql-pg@0.45.1(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(@effect/sql@0.44.2(@effect/experimental@0.54.6(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(@effect/platform@0.90.6(effect@3.17.9))(effect@3.17.9))(effect@3.17.9)':
@@ -5117,10 +5123,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7):
+  drizzle-orm@0.44.4(@types/pg@8.15.5)(pg@8.13.1)(postgres@3.4.7):
     optionalDependencies:
       '@types/pg': 8.15.5
-      pg: 8.16.3
+      pg: 8.13.1
       postgres: 3.4.7
 
   dunder-proto@1.0.1:
@@ -6297,9 +6303,9 @@ snapshots:
 
   pg-int8@1.0.1: {}
 
-  pg-pool@3.10.1(pg@8.16.3):
+  pg-pool@3.10.1(pg@8.13.1):
     dependencies:
-      pg: 8.16.3
+      pg: 8.13.1
 
   pg-protocol@1.10.3: {}
 
@@ -6311,10 +6317,10 @@ snapshots:
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
 
-  pg@8.16.3:
+  pg@8.13.1:
     dependencies:
       pg-connection-string: 2.9.1
-      pg-pool: 3.10.1(pg@8.16.3)
+      pg-pool: 3.10.1(pg@8.13.1)
       pg-protocol: 1.10.3
       pg-types: 2.2.0
       pgpass: 1.0.5
