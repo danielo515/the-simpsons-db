@@ -68,22 +68,6 @@ export const formatDuration = (seconds: number): string => {
   return `${minutes}:${secs.toString().padStart(2, "0")}`
 }
 
-export const parseTimeToSeconds = (timeString: string): Option.Option<number> => {
-  const parts = timeString.split(":").map(Number)
-
-  if (parts.length === 2 && parts.every((n) => !isNaN(n))) {
-    const [minutes, seconds] = parts
-    return Option.some(minutes * 60 + seconds)
-  }
-
-  if (parts.length === 3 && parts.every((n) => !isNaN(n))) {
-    const [hours, minutes, seconds] = parts
-    return Option.some(hours * 3600 + minutes * 60 + seconds)
-  }
-
-  return Option.none()
-}
-
 // String utilities
 export const sanitizeFilename = (filename: string): string =>
   filename
@@ -102,7 +86,7 @@ export const extractSeasonEpisode = (filename: string): Option.Option<{ season: 
 
   for (const pattern of patterns) {
     const match = filename.match(pattern)
-    if (match) {
+    if (match && match[1] && match[2]) {
       const season = parseInt(match[1], 10)
       const episode = parseInt(match[2], 10)
       if (season > 0 && episode > 0) {

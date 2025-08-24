@@ -11,6 +11,7 @@ export const BaseFields = {
   optionalString: (maxLength: number) => Schema.optional(Schema.String.pipe(Schema.maxLength(maxLength))),
   optionalDate: Schema.optional(Schema.DateFromSelf)
 }
+export const NonEmptyString = Schema.String.pipe(Schema.minLength(1))
 export const FilePath = Schema.String.pipe(Schema.minLength(1), Schema.brand("FilePath"))
 export type FilePath = typeof FilePath.Type
 

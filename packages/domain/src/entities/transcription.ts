@@ -1,46 +1,31 @@
+import { BaseFields, NonEmptyString } from "@simpsons-db/shared"
 import { Schema } from "effect"
-import { BaseFields } from "@simpsons-db/shared"
+import { EpisodeId } from "./episode.js"
+
+export const TranscriptionId = Schema.UUID.pipe(Schema.brand("TranscriptionId"))
 
 // Core Transcription domain entity
 export const Transcription = Schema.Struct({
-  id: BaseFields.id,
-  episodeId: BaseFields.episodeId,
+  id: TranscriptionId,
+  episodeId: EpisodeId,
   segmentIndex: BaseFields.nonNegativeInt,
   startTime: Schema.Number.pipe(Schema.nonNegative()),
   endTime: Schema.Number.pipe(Schema.positive()),
-  text: BaseFields.requiredText,
+  text: Schema.String.pipe(Schema.minLength(1)),
   confidence: Schema.optional(BaseFields.confidenceNumber),
   speaker: Schema.optional(Schema.String),
-  language: BaseFields.optionalString(10),
-  createdAt: BaseFields.createdAt
+  language: BaseFields.optionalString(10)
 })
 
 export type Transcription = typeof Transcription.Type
 
 // Core TranscriptionEmbedding domain entity
+export const TranscriptionEmbeddingId = Schema.UUID.pipe(Schema.brand("TranscriptionEmbeddingId"))
 export const TranscriptionEmbedding = Schema.Struct({
-  id: BaseFields.id,
-  transcriptionId: BaseFields.transcriptionId,
+  id: TranscriptionEmbeddingId,
+  transcriptionId: TranscriptionId,
   embedding: Schema.Array(Schema.Number).pipe(Schema.minItems(1536), Schema.maxItems(1536)),
-  model: BaseFields.requiredText,
-  createdAt: BaseFields.createdAt
+  model: NonEmptyString
 })
 
 export type TranscriptionEmbedding = typeof TranscriptionEmbedding.Type
-
-// Domain request types for transcription operations
-export const CreateTranscriptionRequest = Schema.Struct({
-  episodeId: BaseFields.episodeId,
-  segments: Schema.Array(Transcription.pipe(
-    Schema.omit("id", "createdAt")
-  )).pipe(Schema.minItems(1))
-})
-
-export const CreateEmbeddingRequest = TranscriptionEmbedding.pipe(
-  Schema.omit("id", "createdAt", "embedding")
-).pipe(Schema.extend(Schema.Struct({
-  text: BaseFields.requiredText
-})))
-
-export type CreateTranscriptionRequest = typeof CreateTranscriptionRequest.Type
-export type CreateEmbeddingRequest = typeof CreateEmbeddingRequest.Type
