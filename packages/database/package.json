@@ -33,7 +33,7 @@
     "@effect/sql-drizzle": "^0.43.0",
     "@effect/sql-pg": "*",
     "@simpsons-db/shared": "workspace:*",
-    "drizzle-orm": "^0.44.4",
+    "drizzle-orm": "^0.43.0",
     "effect": "*",
     "pg": "8.13.1",
     "postgres": "^3.4.7"

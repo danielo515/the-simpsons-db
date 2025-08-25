@@ -1,9 +1,10 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
+import type { SQL } from "drizzle-orm"
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm"
 import { Effect } from "effect"
+import { DatabaseError, NotFoundError } from "../errors.js"
 import type { NewThumbnail, Thumbnail } from "../schemas/thumbnails.js"
 import { thumbnails } from "../schemas/thumbnails.js"
-import { DatabaseError, NotFoundError } from "./episodes.js"
 
 export interface ThumbnailFilters {
   episodeId?: string
@@ -140,9 +141,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
 
     const findAll = (filters?: ThumbnailFilters) =>
       Effect.gen(function*() {
-        let query = db.select().from(thumbnails)
-
-        const conditions = []
+        const conditions: Array<SQL> = []
 
         if (filters?.episodeId) {
           conditions.push(eq(thumbnails.episodeId, filters.episodeId))
@@ -160,12 +159,8 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           conditions.push(eq(thumbnails.format, filters.format))
         }
 
-        if (conditions.length > 0) {
-          query = query.where(and(...conditions))
-        }
-
-        const result = yield* query.orderBy(asc(thumbnails.timestamp))
-        return result as Array<Thumbnail>
+        const result = yield* db.select().from(thumbnails).where(and(...conditions)).orderBy(asc(thumbnails.timestamp))
+        return result
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findAll" }))),
         Effect.annotateLogs("operation", "ThumbnailsRepository.findAll"),
@@ -184,7 +179,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           return yield* Effect.fail(new NotFoundError({ entity: "Thumbnail", id }))
         }
 
-        return result[0] as Thumbnail
+        return result[0]
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "update" }))),
         Effect.annotateLogs("operation", "ThumbnailsRepository.update"),
@@ -227,7 +222,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           `
         )
 
-        return result as Array<Thumbnail>
+        return result
       }).pipe(
         Effect.catchTag(
           "SqlError",

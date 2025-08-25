@@ -87,8 +87,6 @@ dist
 tmp/
 temp/
 
-# Editor directories and files
-.vscode/launch.json
 .idea
 *.swp
 *.swo
@@ -102,3 +100,5 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+!.vscode

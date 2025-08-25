@@ -41,8 +41,8 @@ export const EpisodeMetadataSchema = Schema.Struct({
   description: Schema.optional(Schema.String),
   airDate: Schema.optional(Schema.DateFromSelf),
   imdbId: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
-  tmdbId: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
-  tvmazeId: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
+  tmdbId: Schema.optional(Schema.Number.pipe(Schema.int())),
+  tvmazeId: Schema.optional(Schema.Number.pipe(Schema.int())),
   rawData: Schema.optional(Schema.Unknown),
   createdAt: Schema.DateFromSelf,
   updatedAt: Schema.DateFromSelf

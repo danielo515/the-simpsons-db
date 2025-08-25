@@ -47,3 +47,28 @@ export const UpdateEpisodeRequest = Schema.Struct({
 
 export type CreateEpisodeRequest = typeof CreateEpisodeRequest.Type
 export type UpdateEpisodeRequest = typeof UpdateEpisodeRequest.Type
+
+// Episode Metadata domain entity
+export const EpisodeMetadata = Schema.Struct({
+  id: Schema.UUID,
+  episodeId: EpisodeId,
+  source: Schema.String.pipe(Schema.maxLength(50)),
+  externalId: Schema.optional(Schema.String.pipe(Schema.maxLength(100))),
+  season: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
+  episodeNumber: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
+  title: Schema.optional(Schema.String),
+  description: Schema.optional(Schema.String),
+  airDate: Schema.optional(Schema.DateFromSelf),
+  imdbId: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
+  tmdbId: Schema.optional(Schema.Number.pipe(Schema.int())),
+  tvmazeId: Schema.optional(Schema.Number.pipe(Schema.int())),
+  rating: Schema.optional(Schema.String.pipe(Schema.maxLength(10))),
+  genres: Schema.optional(Schema.Unknown),
+  cast: Schema.optional(Schema.Unknown),
+  crew: Schema.optional(Schema.Unknown),
+  rawData: Schema.optional(Schema.Unknown),
+  createdAt: Schema.DateFromSelf,
+  updatedAt: Schema.DateFromSelf
+})
+
+export type EpisodeMetadata = typeof EpisodeMetadata.Type

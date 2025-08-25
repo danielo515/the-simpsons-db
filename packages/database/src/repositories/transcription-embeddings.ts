@@ -1,11 +1,12 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
-import { eq, sql } from "drizzle-orm"
-import { Effect } from "effect"
+import { TranscriptionEmbedding as DomainTranscriptionEmbedding } from "@simpsons-db/domain"
+import { and, eq, sql } from "drizzle-orm"
+import { Effect, Schema } from "effect"
+import { DatabaseError, NotFoundError } from "../errors.js"
 import { episodes } from "../schemas/episodes.js"
-import type { NewTranscriptionEmbedding, TranscriptionEmbedding } from "../schemas/transcription-embeddings.js"
+import type { NewTranscriptionEmbedding } from "../schemas/transcription-embeddings.js"
 import { transcriptionEmbeddings } from "../schemas/transcription-embeddings.js"
 import { transcriptions } from "../schemas/transcriptions.js"
-import { DatabaseError, NotFoundError } from "./episodes.js"
 
 export interface SimilarityResult {
   id: string
@@ -34,8 +35,19 @@ export class TranscriptionEmbeddingsRepository
 
       const create = (data: NewTranscriptionEmbedding) =>
         Effect.gen(function*() {
-          const result = yield* db.insert(transcriptionEmbeddings).values(data).returning()
-          return result[0] as TranscriptionEmbedding
+          const result = yield* db.insert(transcriptionEmbeddings).values({
+            ...data,
+            embedding: Array.from(data.embedding)
+          }).returning()
+          if (!result[0]) {
+            return yield* Effect.fail(new NotFoundError({ entity: "TranscriptionEmbedding", id: "unknown" }))
+          }
+          return yield* Schema.decodeUnknown(DomainTranscriptionEmbedding)({
+            id: result[0].id,
+            transcriptionId: result[0].transcriptionId,
+            embedding: result[0].embedding,
+            model: result[0].model
+          })
         }).pipe(
           Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "create" }))),
           Effect.annotateLogs("operation", "TranscriptionEmbeddingsRepository.create"),
@@ -44,8 +56,18 @@ export class TranscriptionEmbeddingsRepository
 
       const createMany = (data: Array<NewTranscriptionEmbedding>) =>
         Effect.gen(function*() {
-          const result = yield* db.insert(transcriptionEmbeddings).values(data).returning()
-          return result as Array<TranscriptionEmbedding>
+          const transformedData = data.map((item) => ({
+            ...item,
+            embedding: Array.from(item.embedding)
+          }))
+          const result = yield* db.insert(transcriptionEmbeddings).values(transformedData).returning()
+          return yield* Effect.forEach(result, (item) =>
+            Schema.decodeUnknown(DomainTranscriptionEmbedding)({
+              id: item.id,
+              transcriptionId: item.transcriptionId,
+              embedding: item.embedding,
+              model: item.model
+            }), { concurrency: "unbounded" })
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(new DatabaseError({ cause: error, operation: "createMany" }))),
@@ -57,18 +79,24 @@ export class TranscriptionEmbeddingsRepository
         Effect.gen(function*() {
           const result = yield* db.select().from(transcriptionEmbeddings).where(eq(transcriptionEmbeddings.id, id))
 
-          if (result.length === 0) {
+          const record = result[0]
+          if (!record) {
             return yield* Effect.fail(new NotFoundError({ entity: "TranscriptionEmbedding", id }))
           }
 
-          return result[0] as TranscriptionEmbedding
+          return yield* Schema.decodeUnknown(DomainTranscriptionEmbedding)({
+            id: record.id,
+            transcriptionId: record.transcriptionId,
+            embedding: record.embedding,
+            model: record.model
+          })
         }).pipe(
           Effect.catchTag(
             "SqlError",
             (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findById" }))
           ),
           Effect.annotateLogs("operation", "TranscriptionEmbeddingsRepository.findById"),
-          Effect.withSpan("TranscriptionEmbeddingsRepository.findById", { id })
+          Effect.withSpan("TranscriptionEmbeddingsRepository.findById", { attributes: { id } })
         )
 
       const findByTranscriptionId = (transcriptionId: string) =>
@@ -78,12 +106,20 @@ export class TranscriptionEmbeddingsRepository
             .from(transcriptionEmbeddings)
             .where(eq(transcriptionEmbeddings.transcriptionId, transcriptionId))
 
-          return result as Array<TranscriptionEmbedding>
+          return yield* Effect.forEach(result, (item) =>
+            Schema.decodeUnknown(DomainTranscriptionEmbedding)({
+              id: item.id,
+              transcriptionId: item.transcriptionId,
+              embedding: item.embedding,
+              model: item.model
+            }), { concurrency: "unbounded" })
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(new DatabaseError({ cause: error, operation: "findByTranscriptionId" }))),
           Effect.annotateLogs("operation", "TranscriptionEmbeddingsRepository.findByTranscriptionId"),
-          Effect.withSpan("TranscriptionEmbeddingsRepository.findByTranscriptionId", { transcriptionId })
+          Effect.withSpan("TranscriptionEmbeddingsRepository.findByTranscriptionId", {
+            attributes: { transcriptionId }
+          })
         )
 
       const findSimilar = (queryEmbedding: Array<number>, limit: number = 10, threshold: number = 0.7) =>
@@ -114,7 +150,7 @@ export class TranscriptionEmbeddingsRepository
           `
           )
 
-          return result.rows.map((row) => ({
+          return result.map((row) => ({
             id: row.id as string,
             transcriptionId: row.transcription_id as string,
             embedding: row.embedding as Array<number>,
@@ -131,7 +167,7 @@ export class TranscriptionEmbeddingsRepository
             (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findSimilar" }))
           ),
           Effect.annotateLogs("operation", "TranscriptionEmbeddingsRepository.findSimilar"),
-          Effect.withSpan("TranscriptionEmbeddingsRepository.findSimilar", { limit, threshold })
+          Effect.withSpan("TranscriptionEmbeddingsRepository.findSimilar", { attributes: { limit, threshold } })
         )
 
       const findSimilarInEpisode = (
@@ -168,7 +204,7 @@ export class TranscriptionEmbeddingsRepository
           `
           )
 
-          return result.rows.map((row) => ({
+          return result.map((row) => ({
             id: row.id as string,
             transcriptionId: row.transcription_id as string,
             embedding: row.embedding as Array<number>,
@@ -183,23 +219,37 @@ export class TranscriptionEmbeddingsRepository
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(new DatabaseError({ cause: error, operation: "findSimilarInEpisode" }))),
           Effect.annotateLogs("operation", "TranscriptionEmbeddingsRepository.findSimilarInEpisode"),
-          Effect.withSpan("TranscriptionEmbeddingsRepository.findSimilarInEpisode", { episodeId, limit, threshold })
+          Effect.withSpan("TranscriptionEmbeddingsRepository.findSimilarInEpisode", {
+            attributes: { episodeId, limit, threshold }
+          })
         )
 
       const findAll = (filters?: EmbeddingFilters) =>
         Effect.gen(function*() {
-          let query = db.select().from(transcriptionEmbeddings)
+          const conditions = []
 
           if (filters?.transcriptionId) {
-            query = query.where(eq(transcriptionEmbeddings.transcriptionId, filters.transcriptionId))
+            conditions.push(eq(transcriptionEmbeddings.transcriptionId, filters.transcriptionId))
           }
 
           if (filters?.model) {
-            query = query.where(eq(transcriptionEmbeddings.model, filters.model))
+            conditions.push(eq(transcriptionEmbeddings.model, filters.model))
           }
 
+          const baseQuery = db.select().from(transcriptionEmbeddings)
+
+          const query = conditions.length > 0
+            ? baseQuery.where(and(...conditions))
+            : baseQuery
+
           const result = yield* query
-          return result as Array<TranscriptionEmbedding>
+          return yield* Effect.forEach(result, (item) =>
+            Schema.decodeUnknown(DomainTranscriptionEmbedding)({
+              id: item.id,
+              transcriptionId: item.transcriptionId,
+              embedding: item.embedding,
+              model: item.model
+            }), { concurrency: "unbounded" })
         }).pipe(
           Effect.catchTag(
             "SqlError",
@@ -213,7 +263,11 @@ export class TranscriptionEmbeddingsRepository
         Effect.gen(function*() {
           const result = yield* db
             .update(transcriptionEmbeddings)
-            .set({ ...data, updatedAt: new Date() })
+            .set({
+              ...data,
+              embedding: data.embedding ? Array.from(data.embedding) : undefined,
+              updatedAt: new Date()
+            })
             .where(eq(transcriptionEmbeddings.id, id))
             .returning()
 
@@ -221,11 +275,18 @@ export class TranscriptionEmbeddingsRepository
             return yield* Effect.fail(new NotFoundError({ entity: "TranscriptionEmbedding", id }))
           }
 
-          return result[0] as TranscriptionEmbedding
+          const [updatedRecord] = result
+          if (!updatedRecord) {
+            return yield* Effect.fail(
+              new DatabaseError({ cause: "Database did not return the updated value", operation: "update" })
+            )
+          }
+
+          return yield* Schema.decodeUnknown(DomainTranscriptionEmbedding)(updatedRecord)
         }).pipe(
           Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "update" }))),
           Effect.annotateLogs("operation", "TranscriptionEmbeddingsRepository.update"),
-          Effect.withSpan("TranscriptionEmbeddingsRepository.update", { id })
+          Effect.withSpan("TranscriptionEmbeddingsRepository.update", { attributes: { id } })
         )
 
       const deleteById = (id: string) =>
@@ -238,7 +299,7 @@ export class TranscriptionEmbeddingsRepository
         }).pipe(
           Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "delete" }))),
           Effect.annotateLogs("operation", "TranscriptionEmbeddingsRepository.delete"),
-          Effect.withSpan("TranscriptionEmbeddingsRepository.delete", { id })
+          Effect.withSpan("TranscriptionEmbeddingsRepository.delete", { attributes: { id } })
         )
 
       const deleteByTranscriptionId = (transcriptionId: string) =>
@@ -248,7 +309,9 @@ export class TranscriptionEmbeddingsRepository
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(new DatabaseError({ cause: error, operation: "deleteByTranscriptionId" }))),
           Effect.annotateLogs("operation", "TranscriptionEmbeddingsRepository.deleteByTranscriptionId"),
-          Effect.withSpan("TranscriptionEmbeddingsRepository.deleteByTranscriptionId", { transcriptionId })
+          Effect.withSpan("TranscriptionEmbeddingsRepository.deleteByTranscriptionId", {
+            attributes: { transcriptionId }
+          })
         )
 
       return {

@@ -5,7 +5,7 @@ import type { ParseResult } from "effect"
 import { Effect, Schema } from "effect"
 import type { NewTranscriptionRecord, TranscriptionRecord } from "../schemas/transcriptions.js"
 import { transcriptions } from "../schemas/transcriptions.js"
-import { DatabaseError, NotFoundError } from "./episodes.js"
+import { DatabaseError, NotFoundError } from "../errors.js"
 
 // Transformation functions between database records and domain entities
 const toDomainEntity = (record: TranscriptionRecord): Effect.Effect<Transcription, ParseResult.ParseError, never> =>
@@ -59,6 +59,9 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
       Effect.gen(function*() {
         const dbRecord = toDbRecord(transcription)
         const result = yield* db.insert(transcriptions).values(dbRecord).returning()
+        if (!result[0]) {
+          return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id: "unknown" }))
+        }
         return yield* toDomainEntity(result[0])
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "create" }))),
@@ -86,10 +89,9 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
       Effect.gen(function*() {
         const result = yield* db.select().from(transcriptions).where(eq(transcriptions.id, id))
 
-        if (result.length === 0) {
-          return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id }))
+        if (!result[0]) {
+          return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id: "unknown" }))
         }
-
         return yield* toDomainEntity(result[0])
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findById" }))),
@@ -171,6 +173,9 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
           return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id }))
         }
 
+        if (!result[0]) {
+          return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id: "unknown" }))
+        }
         return yield* toDomainEntity(result[0])
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "update" }))),
