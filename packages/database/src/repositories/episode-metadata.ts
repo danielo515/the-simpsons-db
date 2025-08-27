@@ -4,29 +4,29 @@ import { EpisodeMetadata as DomainEpisodeMetadata } from "@simpsons-db/domain"
 import { and, asc, eq } from "drizzle-orm"
 import { Effect, Schema } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
-import { episodeMetadata, type NewEpisodeMetadata } from "../schemas/episode-metadata.js"
+import { episodeMetadata, type EpisodeMetadataRow, type NewEpisodeMetadataRow } from "../schemas/episode-metadata.js"
 
-// Helper function to convert database result to domain entity input
-const mapDbResultToDomain = (result: any) => ({
-  id: result.id,
-  episodeId: result.episodeId as EpisodeId,
-  source: result.source,
-  externalId: result.externalId ?? undefined,
-  title: result.title ?? undefined,
-  season: result.season ?? undefined,
-  episodeNumber: result.episodeNumber ?? undefined,
-  airDate: result.airDate ?? undefined,
-  description: result.description ?? undefined,
-  imdbId: result.imdbId ?? undefined,
-  tmdbId: result.tmdbId ?? undefined,
-  tvmazeId: result.tvmazeId ?? undefined,
-  rating: result.rating ?? undefined,
-  genres: result.genres ?? undefined,
-  cast: result.cast ?? undefined,
-  crew: result.crew ?? undefined,
-  rawData: result.rawData ?? undefined,
-  createdAt: result.createdAt,
-  updatedAt: result.updatedAt
+// Helper function to convert database row to domain entity input
+const mapDbRowToDomain = (row: EpisodeMetadataRow) => ({
+  id: row.id,
+  episodeId: row.episodeId as EpisodeId,
+  source: row.source,
+  externalId: row.externalId ?? undefined,
+  title: row.title ?? undefined,
+  season: row.season ?? undefined,
+  episodeNumber: row.episodeNumber ?? undefined,
+  airDate: row.airDate ?? undefined,
+  description: row.description ?? undefined,
+  imdbId: row.imdbId ?? undefined,
+  tmdbId: row.tmdbId ?? undefined,
+  tvmazeId: row.tvmazeId ?? undefined,
+  rating: row.rating ?? undefined,
+  genres: row.genres ?? undefined,
+  cast: row.cast ?? undefined,
+  crew: row.crew ?? undefined,
+  rawData: row.rawData ?? undefined,
+  createdAt: row.createdAt,
+  updatedAt: row.updatedAt
 })
 
 export interface EpisodeMetadataFilters {
@@ -46,7 +46,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
     effect: Effect.gen(function*() {
       const db = yield* PgDrizzle
 
-      const create = (data: NewEpisodeMetadata) =>
+      const create = (data: NewEpisodeMetadataRow) =>
         Effect.gen(function*() {
           const [result] = yield* db
             .insert(episodeMetadata)
@@ -55,24 +55,20 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
           if (!result) {
             return yield* new DatabaseError({ cause: "Database did not return the value", operation: "create" })
           }
-          return yield* Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbResultToDomain(result))
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result))
         }).pipe(
           Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "create" }))),
           Effect.annotateLogs("operation", "EpisodeMetadataRepository.create"),
           Effect.withSpan("EpisodeMetadataRepository.create")
         )
 
-      const createMany = (data: Array<NewEpisodeMetadata>) =>
+      const createMany = (data: Array<NewEpisodeMetadataRow>) =>
         Effect.gen(function*() {
           const result = yield* db
             .insert(episodeMetadata)
             .values(data)
             .returning()
-          return yield* Effect.forEach(
-            result,
-            (item) => Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbResultToDomain(item)),
-            { concurrency: "unbounded" }
-          )
+          return result.map((item) => DomainEpisodeMetadata.make(mapDbRowToDomain(item)))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -98,26 +94,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             )
           }
 
-          return yield* Schema.decodeUnknown(DomainEpisodeMetadata)({
-            id: result[0]!.id,
-            episodeId: result[0]!.episodeId,
-            source: result[0]!.source,
-            title: result[0]!.title,
-            season: result[0]!.season,
-            episodeNumber: result[0]!.episodeNumber,
-            airDate: result[0]!.airDate,
-            description: result[0]!.description,
-            imdbId: result[0]!.imdbId,
-            tmdbId: result[0]!.tmdbId,
-            tvmazeId: result[0]!.tvmazeId,
-            rating: result[0]!.rating,
-            genres: result[0]!.genres,
-            cast: result[0]!.cast,
-            crew: result[0]!.crew,
-            rawData: result[0]!.rawData,
-            createdAt: result[0]!.createdAt,
-            updatedAt: result[0]!.updatedAt
-          })
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -142,26 +119,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .orderBy(asc(episodeMetadata.source))
 
           return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainEpisodeMetadata)({
-              id: item.id,
-              episodeId: item.episodeId,
-              source: item.source,
-              title: item.title,
-              season: item.season,
-              episodeNumber: item.episodeNumber,
-              airDate: item.airDate,
-              description: item.description,
-              imdbId: item.imdbId,
-              tmdbId: item.tmdbId,
-              tvmazeId: item.tvmazeId,
-              rating: item.rating,
-              genres: item.genres,
-              cast: item.cast,
-              crew: item.crew,
-              rawData: item.rawData,
-              createdAt: item.createdAt,
-              updatedAt: item.updatedAt
-            }), { concurrency: "unbounded" })
+            Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbRowToDomain(item)), { concurrency: "unbounded" })
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -193,7 +151,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             )
           }
 
-          return yield* Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbResultToDomain(result[0]!))
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -234,26 +192,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .orderBy(asc(episodeMetadata.source))
 
           return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainEpisodeMetadata)({
-              id: item.id,
-              episodeId: item.episodeId,
-              source: item.source,
-              title: item.title,
-              season: item.season,
-              episodeNumber: item.episodeNumber,
-              airDate: item.airDate,
-              description: item.description,
-              imdbId: item.imdbId,
-              tmdbId: item.tmdbId,
-              tvmazeId: item.tvmazeId,
-              rating: item.rating,
-              genres: item.genres,
-              cast: item.cast,
-              crew: item.crew,
-              rawData: item.rawData,
-              createdAt: item.createdAt,
-              updatedAt: item.updatedAt
-            }), { concurrency: "unbounded" })
+            Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbRowToDomain(item)), { concurrency: "unbounded" })
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -293,26 +232,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             )
           }
 
-          return yield* Schema.decodeUnknown(DomainEpisodeMetadata)({
-            id: result[0]!.id,
-            episodeId: result[0]!.episodeId,
-            source: result[0]!.source,
-            title: result[0]!.title,
-            season: result[0]!.season,
-            episodeNumber: result[0]!.episodeNumber,
-            airDate: result[0]!.airDate,
-            description: result[0]!.description,
-            imdbId: result[0]!.imdbId,
-            tmdbId: result[0]!.tmdbId,
-            tvmazeId: result[0]!.tvmazeId,
-            rating: result[0]!.rating,
-            genres: result[0]!.genres,
-            cast: result[0]!.cast,
-            crew: result[0]!.crew,
-            rawData: result[0]!.rawData,
-            createdAt: result[0]!.createdAt,
-            updatedAt: result[0]!.updatedAt
-          })
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -335,26 +255,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .where(eq(episodeMetadata.imdbId, imdbId))
 
           return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainEpisodeMetadata)({
-              id: item.id,
-              episodeId: item.episodeId,
-              source: item.source,
-              title: item.title,
-              season: item.season,
-              episodeNumber: item.episodeNumber,
-              airDate: item.airDate,
-              description: item.description,
-              imdbId: item.imdbId,
-              tmdbId: item.tmdbId,
-              tvmazeId: item.tvmazeId,
-              rating: item.rating,
-              genres: item.genres,
-              cast: item.cast,
-              crew: item.crew,
-              rawData: item.rawData,
-              createdAt: item.createdAt,
-              updatedAt: item.updatedAt
-            }), { concurrency: "unbounded" })
+            Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbRowToDomain(item)), { concurrency: "unbounded" })
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -382,26 +283,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             )
           }
 
-          return yield* Schema.decodeUnknown(DomainEpisodeMetadata)({
-            id: result[0]!.id,
-            episodeId: result[0]!.episodeId,
-            source: result[0]!.source,
-            title: result[0]!.title,
-            season: result[0]!.season,
-            episodeNumber: result[0]!.episodeNumber,
-            airDate: result[0]!.airDate,
-            description: result[0]!.description,
-            imdbId: result[0]!.imdbId,
-            tmdbId: result[0]!.tmdbId,
-            tvmazeId: result[0]!.tvmazeId,
-            rating: result[0]!.rating,
-            genres: result[0]!.genres,
-            cast: result[0]!.cast,
-            crew: result[0]!.crew,
-            rawData: result[0]!.rawData,
-            createdAt: result[0]!.createdAt,
-            updatedAt: result[0]!.updatedAt
-          })
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -429,26 +311,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             )
           }
 
-          return yield* Schema.decodeUnknown(DomainEpisodeMetadata)({
-            id: result[0]!.id,
-            episodeId: result[0]!.episodeId,
-            source: result[0]!.source,
-            title: result[0]!.title,
-            season: result[0]!.season,
-            episodeNumber: result[0]!.episodeNumber,
-            airDate: result[0]!.airDate,
-            description: result[0]!.description,
-            imdbId: result[0]!.imdbId,
-            tmdbId: result[0]!.tmdbId,
-            tvmazeId: result[0]!.tvmazeId,
-            rating: result[0]!.rating,
-            genres: result[0]!.genres,
-            cast: result[0]!.cast,
-            crew: result[0]!.crew,
-            rawData: result[0]!.rawData,
-            createdAt: result[0]!.createdAt,
-            updatedAt: result[0]!.updatedAt
-          })
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -502,7 +365,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             asc(episodeMetadata.episodeNumber)
           )
           return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbResultToDomain(item)), { concurrency: "unbounded" })
+            Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbRowToDomain(item)), { concurrency: "unbounded" })
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -515,7 +378,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
           Effect.withSpan("EpisodeMetadataRepository.findAll")
         )
 
-      const update = (id: string, data: Partial<NewEpisodeMetadata>) =>
+      const update = (id: string, data: Partial<NewEpisodeMetadataRow>) =>
         Effect.gen(function*() {
           const result = yield* db
             .update(episodeMetadata)
@@ -544,7 +407,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
       const upsertByEpisodeIdAndSource = (
         episodeId: string,
         source: string,
-        data: Omit<NewEpisodeMetadata, "episodeId" | "source">
+        data: Omit<NewEpisodeMetadataRow, "episodeId" | "source">
       ) =>
         Effect.gen(function*() {
           const existing = yield* findByEpisodeIdAndSource(
@@ -555,7 +418,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
           if (existing._tag === "Some") {
             return yield* update(existing.value.id, data)
           } else {
-            return yield* create({ ...data, episodeId, source })
+            return yield* create({ ...data, episodeId, source } as NewEpisodeMetadataRow)
           }
         }).pipe(
           Effect.annotateLogs(

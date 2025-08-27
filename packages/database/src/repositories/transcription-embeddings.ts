@@ -1,10 +1,11 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
+import type { TranscriptionEmbeddingId, TranscriptionId } from "@simpsons-db/domain"
 import { TranscriptionEmbedding as DomainTranscriptionEmbedding } from "@simpsons-db/domain"
 import { and, eq, sql } from "drizzle-orm"
-import { Effect, Schema } from "effect"
+import { Effect } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
 import { episodes } from "../schemas/episodes.js"
-import type { NewTranscriptionEmbedding } from "../schemas/transcription-embeddings.js"
+import type { NewTranscriptionEmbeddingRow } from "../schemas/transcription-embeddings.js"
 import { transcriptionEmbeddings } from "../schemas/transcription-embeddings.js"
 import { transcriptions } from "../schemas/transcriptions.js"
 
@@ -33,7 +34,7 @@ export class TranscriptionEmbeddingsRepository
     effect: Effect.gen(function*() {
       const db = yield* PgDrizzle
 
-      const create = (data: NewTranscriptionEmbedding) =>
+      const create = (data: NewTranscriptionEmbeddingRow) =>
         Effect.gen(function*() {
           const result = yield* db.insert(transcriptionEmbeddings).values({
             ...data,
@@ -42,9 +43,9 @@ export class TranscriptionEmbeddingsRepository
           if (!result[0]) {
             return yield* Effect.fail(new NotFoundError({ entity: "TranscriptionEmbedding", id: "unknown" }))
           }
-          return yield* Schema.decodeUnknown(DomainTranscriptionEmbedding)({
-            id: result[0].id,
-            transcriptionId: result[0].transcriptionId,
+          return DomainTranscriptionEmbedding.make({
+            id: result[0].id as typeof TranscriptionEmbeddingId.Type,
+            transcriptionId: result[0].transcriptionId as typeof TranscriptionId.Type,
             embedding: result[0].embedding,
             model: result[0].model
           })
@@ -54,20 +55,21 @@ export class TranscriptionEmbeddingsRepository
           Effect.withSpan("TranscriptionEmbeddingsRepository.create")
         )
 
-      const createMany = (data: Array<NewTranscriptionEmbedding>) =>
+      const createMany = (data: Array<NewTranscriptionEmbeddingRow>) =>
         Effect.gen(function*() {
           const transformedData = data.map((item) => ({
             ...item,
             embedding: Array.from(item.embedding)
           }))
           const result = yield* db.insert(transcriptionEmbeddings).values(transformedData).returning()
-          return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainTranscriptionEmbedding)({
-              id: item.id,
-              transcriptionId: item.transcriptionId,
+          return result.map((item) =>
+            DomainTranscriptionEmbedding.make({
+              id: item.id as typeof TranscriptionEmbeddingId.Type,
+              transcriptionId: item.transcriptionId as typeof TranscriptionId.Type,
               embedding: item.embedding,
               model: item.model
-            }), { concurrency: "unbounded" })
+            })
+          )
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(new DatabaseError({ cause: error, operation: "createMany" }))),
@@ -77,16 +79,18 @@ export class TranscriptionEmbeddingsRepository
 
       const findById = (id: string) =>
         Effect.gen(function*() {
-          const result = yield* db.select().from(transcriptionEmbeddings).where(eq(transcriptionEmbeddings.id, id))
+          const result = yield* db.select().from(transcriptionEmbeddings).where(
+            eq(transcriptionEmbeddings.id, id as typeof TranscriptionEmbeddingId.Type)
+          )
 
           const record = result[0]
           if (!record) {
             return yield* Effect.fail(new NotFoundError({ entity: "TranscriptionEmbedding", id }))
           }
 
-          return yield* Schema.decodeUnknown(DomainTranscriptionEmbedding)({
-            id: record.id,
-            transcriptionId: record.transcriptionId,
+          return DomainTranscriptionEmbedding.make({
+            id: record.id as typeof TranscriptionEmbeddingId.Type,
+            transcriptionId: record.transcriptionId as typeof TranscriptionId.Type,
             embedding: record.embedding,
             model: record.model
           })
@@ -104,15 +108,16 @@ export class TranscriptionEmbeddingsRepository
           const result = yield* db
             .select()
             .from(transcriptionEmbeddings)
-            .where(eq(transcriptionEmbeddings.transcriptionId, transcriptionId))
+            .where(eq(transcriptionEmbeddings.transcriptionId, transcriptionId as typeof TranscriptionId.Type))
 
-          return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainTranscriptionEmbedding)({
-              id: item.id,
-              transcriptionId: item.transcriptionId,
+          return result.map((item) =>
+            DomainTranscriptionEmbedding.make({
+              id: item.id as typeof TranscriptionEmbeddingId.Type,
+              transcriptionId: item.transcriptionId as typeof TranscriptionId.Type,
               embedding: item.embedding,
               model: item.model
-            }), { concurrency: "unbounded" })
+            })
+          )
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(new DatabaseError({ cause: error, operation: "findByTranscriptionId" }))),
@@ -229,7 +234,9 @@ export class TranscriptionEmbeddingsRepository
           const conditions = []
 
           if (filters?.transcriptionId) {
-            conditions.push(eq(transcriptionEmbeddings.transcriptionId, filters.transcriptionId))
+            conditions.push(
+              eq(transcriptionEmbeddings.transcriptionId, filters.transcriptionId as typeof TranscriptionId.Type)
+            )
           }
 
           if (filters?.model) {
@@ -243,13 +250,14 @@ export class TranscriptionEmbeddingsRepository
             : baseQuery
 
           const result = yield* query
-          return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainTranscriptionEmbedding)({
-              id: item.id,
-              transcriptionId: item.transcriptionId,
+          return result.map((item) =>
+            DomainTranscriptionEmbedding.make({
+              id: item.id as typeof TranscriptionEmbeddingId.Type,
+              transcriptionId: item.transcriptionId as typeof TranscriptionId.Type,
               embedding: item.embedding,
               model: item.model
-            }), { concurrency: "unbounded" })
+            })
+          )
         }).pipe(
           Effect.catchTag(
             "SqlError",
@@ -259,7 +267,7 @@ export class TranscriptionEmbeddingsRepository
           Effect.withSpan("TranscriptionEmbeddingsRepository.findAll")
         )
 
-      const update = (id: string, data: Partial<NewTranscriptionEmbedding>) =>
+      const update = (id: string, data: Partial<NewTranscriptionEmbeddingRow>) =>
         Effect.gen(function*() {
           const result = yield* db
             .update(transcriptionEmbeddings)
@@ -282,7 +290,12 @@ export class TranscriptionEmbeddingsRepository
             )
           }
 
-          return yield* Schema.decodeUnknown(DomainTranscriptionEmbedding)(updatedRecord)
+          return DomainTranscriptionEmbedding.make({
+            id: updatedRecord.id as typeof TranscriptionEmbeddingId.Type,
+            transcriptionId: updatedRecord.transcriptionId as typeof TranscriptionId.Type,
+            embedding: updatedRecord.embedding,
+            model: updatedRecord.model
+          })
         }).pipe(
           Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "update" }))),
           Effect.annotateLogs("operation", "TranscriptionEmbeddingsRepository.update"),
@@ -291,7 +304,9 @@ export class TranscriptionEmbeddingsRepository
 
       const deleteById = (id: string) =>
         Effect.gen(function*() {
-          const result = yield* db.delete(transcriptionEmbeddings).where(eq(transcriptionEmbeddings.id, id)).returning()
+          const result = yield* db.delete(transcriptionEmbeddings).where(
+            eq(transcriptionEmbeddings.id, id as typeof TranscriptionEmbeddingId.Type)
+          ).returning()
 
           if (result.length === 0) {
             return yield* Effect.fail(new NotFoundError({ entity: "TranscriptionEmbedding", id }))
@@ -304,7 +319,9 @@ export class TranscriptionEmbeddingsRepository
 
       const deleteByTranscriptionId = (transcriptionId: string) =>
         Effect.gen(function*() {
-          yield* db.delete(transcriptionEmbeddings).where(eq(transcriptionEmbeddings.transcriptionId, transcriptionId))
+          yield* db.delete(transcriptionEmbeddings).where(
+            eq(transcriptionEmbeddings.transcriptionId, transcriptionId as typeof TranscriptionId.Type)
+          )
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(new DatabaseError({ cause: error, operation: "deleteByTranscriptionId" }))),

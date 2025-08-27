@@ -1,10 +1,10 @@
 import { index, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
-import { Schema } from "effect"
+import type { EpisodeId, EpisodeMetadataId } from "./branded-types.js"
 import { episodes } from "./episodes.js"
 
 export const episodeMetadata = pgTable("episode_metadata", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  episodeId: uuid("episode_id").notNull().references(() => episodes.id, { onDelete: "cascade" }),
+  id: uuid("id").primaryKey().defaultRandom().$type<EpisodeMetadataId>(),
+  episodeId: uuid("episode_id").notNull().references(() => episodes.id, { onDelete: "cascade" }).$type<EpisodeId>(),
   source: varchar("source", { length: 50 }).notNull(),
   externalId: varchar("external_id", { length: 100 }),
   title: varchar("title", { length: 500 }),
@@ -29,31 +29,6 @@ export const episodeMetadata = pgTable("episode_metadata", {
   index("episode_metadata_season_episode_idx").on(table.season, table.episodeNumber)
 ])
 
-// Episode metadata schema - package-specific
-export const EpisodeMetadataSchema = Schema.Struct({
-  id: Schema.UUID,
-  episodeId: Schema.UUID,
-  source: Schema.String.pipe(Schema.maxLength(50)),
-  externalId: Schema.String.pipe(Schema.maxLength(100)),
-  season: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  episodeNumber: Schema.optional(Schema.Number.pipe(Schema.int(), Schema.positive())),
-  title: Schema.optional(Schema.String),
-  description: Schema.optional(Schema.String),
-  airDate: Schema.optional(Schema.DateFromSelf),
-  imdbId: Schema.optional(Schema.String.pipe(Schema.maxLength(20))),
-  tmdbId: Schema.optional(Schema.Number.pipe(Schema.int())),
-  tvmazeId: Schema.optional(Schema.Number.pipe(Schema.int())),
-  rawData: Schema.optional(Schema.Unknown),
-  createdAt: Schema.DateFromSelf,
-  updatedAt: Schema.DateFromSelf
-})
-
-export const NewEpisodeMetadataSchema = EpisodeMetadataSchema.pipe(
-  Schema.omit("id", "createdAt", "updatedAt")
-).pipe(Schema.extend(Schema.Struct({
-  source: Schema.optional(Schema.String.pipe(Schema.maxLength(50))),
-  externalId: Schema.optional(Schema.String.pipe(Schema.maxLength(100)))
-})))
-
-export type EpisodeMetadata = typeof EpisodeMetadataSchema.Type
-export type NewEpisodeMetadata = typeof NewEpisodeMetadataSchema.Type
+// Database types inferred from Drizzle schema
+export type EpisodeMetadataRow = typeof episodeMetadata.$inferSelect
+export type NewEpisodeMetadataRow = typeof episodeMetadata.$inferInsert

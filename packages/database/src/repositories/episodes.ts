@@ -1,9 +1,9 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
 import { Episode } from "@simpsons-db/domain/entities/episode"
 import { and, asc, eq, isNotNull, isNull } from "drizzle-orm"
-import { Effect, Schema } from "effect"
+import { Effect } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
-import type { NewEpisode } from "../schemas/episodes.js"
+import type { EpisodeRow, NewEpisodeRow } from "../schemas/episodes.js"
 import { episodes } from "../schemas/episodes.js"
 
 export interface EpisodeFilters {
@@ -15,8 +15,8 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
   accessors: true,
   effect: Effect.gen(function*() {
     const db = yield* PgDrizzle
-    const mapDbResultToDomain = (dbResult: typeof episodes.$inferSelect) => ({
-      id: dbResult.id,
+    const mapDbRowToDomain = (dbResult: EpisodeRow) => ({
+      id: dbResult.id as typeof Episode.Type.id,
       season: 1, // Default values since episodes table doesn't store episode metadata
       episodeNumber: 1,
       title: "Unknown Episode",
@@ -34,7 +34,7 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
         width: undefined,
         height: undefined
       },
-      filePath: dbResult.filePath,
+      filePath: dbResult.filePath as typeof Episode.Type.filePath,
       fileName: dbResult.fileName,
       fileSize: dbResult.fileSize,
       checksum: dbResult.checksum,
@@ -44,13 +44,13 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
       metadataStatus: "pending" as const
     })
 
-    const create = (data: NewEpisode) =>
+    const create = (data: NewEpisodeRow) =>
       Effect.gen(function*() {
         const [result] = yield* db.insert(episodes).values(data).returning()
         if (!result) {
           return yield* new DatabaseError({ cause: "Database did not return the value", operation: "create" })
         }
-        return yield* Schema.decodeUnknown(Episode)(mapDbResultToDomain(result))
+        return Episode.make(mapDbRowToDomain(result))
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "create" }))),
         Effect.annotateLogs("operation", "EpisodesRepository.create"),
@@ -65,7 +65,7 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
           return yield* Effect.fail(new NotFoundError({ entity: "Episode", id }))
         }
 
-        return yield* Schema.decodeUnknown(Episode)(mapDbResultToDomain(result[0]!))
+        return Episode.make(mapDbRowToDomain(result[0]!))
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findById" }))),
         Effect.annotateLogs("operation", "EpisodesRepository.findById"),
@@ -80,7 +80,7 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
           return yield* Effect.fail(new NotFoundError({ entity: "Episode", filePath }))
         }
 
-        return yield* Schema.decodeUnknown(Episode)(mapDbResultToDomain(result[0]!))
+        return Episode.make(mapDbRowToDomain(result[0]!))
       }).pipe(
         Effect.catchTag("SqlError", (error) =>
           Effect.fail(new DatabaseError({ cause: error, operation: "findByFilePath" }))),
@@ -99,8 +99,8 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
         if (!result[0]) {
           return yield* new NotFoundError({ entity: "Episode", checksum })
         }
-        const mappedResult = mapDbResultToDomain(result[0])
-        return yield* Schema.decodeUnknown(Episode)(mappedResult)
+        const mappedResult = mapDbRowToDomain(result[0])
+        return Episode.make(mappedResult)
       }).pipe(
         Effect.catchTag("SqlError", (error) =>
           Effect.fail(new DatabaseError({ cause: error, operation: "findByChecksum" }))),
@@ -125,10 +125,7 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
         }
 
         const result = yield* db.select().from(episodes).where(and(...conditions)).orderBy(asc(episodes.createdAt))
-        return yield* Effect.forEach(result, (item) => {
-          const mappedResult = mapDbResultToDomain(item)
-          return Schema.decodeUnknown(Episode)(mappedResult)
-        }, { concurrency: "unbounded" })
+        return result.map((item) => Episode.make(mapDbRowToDomain(item)))
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findAll" }))),
         Effect.annotateLogs("operation", "EpisodesRepository.findAll"),
@@ -137,7 +134,7 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
 
     const update = (
       id: string,
-      data: Partial<NewEpisode> & {
+      data: Partial<NewEpisodeRow> & {
         processed?: boolean
         processingStartedAt?: Date
         processingCompletedAt?: Date
@@ -154,7 +151,7 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
         if (!result[0]) {
           return yield* new NotFoundError({ entity: "Episode", id })
         }
-        return yield* Schema.decodeUnknown(Episode)(mapDbResultToDomain(result[0]))
+        return Episode.make(mapDbRowToDomain(result[0]))
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "update" }))),
         Effect.annotateLogs("operation", "EpisodesRepository.update"),

@@ -1,11 +1,12 @@
 import { decimal, index, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
+import type { EpisodeId, TranscriptionId } from "./branded-types.js"
 import { episodes } from "./episodes.js"
 
 export const transcriptions = pgTable(
   "transcriptions",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    episodeId: uuid("episode_id").notNull().references(() => episodes.id, { onDelete: "cascade" }),
+    id: uuid("id").primaryKey().defaultRandom().$type<TranscriptionId>(),
+    episodeId: uuid("episode_id").notNull().references(() => episodes.id, { onDelete: "cascade" }).$type<EpisodeId>(),
     segmentIndex: integer("segment_index").notNull(),
     startTime: decimal("start_time", { precision: 10, scale: 3 }).notNull(),
     endTime: decimal("end_time", { precision: 10, scale: 3 }).notNull(),

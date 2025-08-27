@@ -1,30 +1,26 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
-import { EpisodeId, Transcription, TranscriptionId } from "@simpsons-db/domain"
+import { Transcription } from "@simpsons-db/domain"
+import type { EpisodeId, TranscriptionId } from "@simpsons-db/domain"
 import { and, asc, eq, gte, lte } from "drizzle-orm"
 import type { ParseResult } from "effect"
-import { Effect, Schema } from "effect"
+import { Effect } from "effect"
+import { DatabaseError, NotFoundError } from "../errors.js"
 import type { NewTranscriptionRecord, TranscriptionRecord } from "../schemas/transcriptions.js"
 import { transcriptions } from "../schemas/transcriptions.js"
-import { DatabaseError, NotFoundError } from "../errors.js"
 
 // Transformation functions between database records and domain entities
-const toDomainEntity = (record: TranscriptionRecord): Effect.Effect<Transcription, ParseResult.ParseError, never> =>
-  Effect.gen(function*() {
-    const id = yield* Schema.decodeUnknown(TranscriptionId)(record.id)
-    const episodeId = yield* Schema.decodeUnknown(EpisodeId)(record.episodeId)
-
-    return yield* Schema.decodeUnknown(Transcription)({
-      id,
-      episodeId,
-      segmentIndex: record.segmentIndex,
-      startTime: parseFloat(record.startTime),
-      endTime: parseFloat(record.endTime),
-      text: record.text,
-      confidence: record.confidence ? parseFloat(record.confidence) : undefined,
-      language: record.language || undefined,
-      speaker: record.speaker || undefined
-    })
-  })
+const toDomainEntity = (record: TranscriptionRecord) =>
+  Effect.succeed(Transcription.make({
+    id: record.id as typeof TranscriptionId.Type,
+    episodeId: record.episodeId as EpisodeId,
+    segmentIndex: record.segmentIndex,
+    startTime: parseFloat(record.startTime),
+    endTime: parseFloat(record.endTime),
+    text: record.text,
+    confidence: record.confidence ? parseFloat(record.confidence) : undefined,
+    language: record.language || undefined,
+    speaker: record.speaker || undefined
+  }))
 
 const toDbRecord = (transcription: Omit<Transcription, "id">): NewTranscriptionRecord => ({
   episodeId: transcription.episodeId,

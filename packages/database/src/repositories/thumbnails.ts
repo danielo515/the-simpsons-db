@@ -1,42 +1,74 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
+import { Thumbnail } from "@simpsons-db/domain/entities/thumbnail"
 import type { SQL } from "drizzle-orm"
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
-import type { NewThumbnail, Thumbnail } from "../schemas/thumbnails.js"
+import type { NewThumbnailRow, ThumbnailRow } from "../schemas/thumbnails.js"
 import { thumbnails } from "../schemas/thumbnails.js"
 
-export interface ThumbnailFilters {
+export interface ThumbnailRowFilters {
   episodeId?: string
   startTimestamp?: number
   endTimestamp: number
   format?: string
 }
 
-export interface ThumbnailTimeRange {
+export interface ThumbnailRowTimeRange {
   startTimestamp: number
   endTimestamp: number
 }
+
+// Transformation functions between database records and domain entities
+const toDomainEntity = (record: ThumbnailRow) =>
+  Effect.succeed(Thumbnail.make({
+    id: record.id,
+    episodeId: record.episodeId,
+    timestamp: parseFloat(record.timestamp),
+    filePath: record.filePath,
+    fileName: record.fileName,
+    fileSize: record.fileSize,
+    width: record.width,
+    height: record.height,
+    format: record.format,
+    createdAt: record.createdAt
+  }))
 
 export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()("ThumbnailsRepository", {
   accessors: true,
   effect: Effect.gen(function*() {
     const db = yield* PgDrizzle
 
-    const create = (data: NewThumbnail) =>
+    const create = (data: NewThumbnailRow) =>
       Effect.gen(function*() {
-        const result = yield* db.insert(thumbnails).values(data).returning()
-        return result[0] as Thumbnail
+        const [result] = yield* db.insert(thumbnails).values(data).returning()
+        if (!result) {
+          return yield* new DatabaseError({ cause: "Database did not return the value", operation: "create" })
+        }
+        return yield* toDomainEntity(result)
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "create" }))),
         Effect.annotateLogs("operation", "ThumbnailsRepository.create"),
         Effect.withSpan("ThumbnailsRepository.create")
       )
 
-    const createMany = (data: Array<NewThumbnail>) =>
+    const createMany = (data: Array<NewThumbnailRow>) =>
       Effect.gen(function*() {
         const result = yield* db.insert(thumbnails).values(data).returning()
-        return result as Array<Thumbnail>
+        return result.map((row) =>
+          Thumbnail.make({
+            id: row.id,
+            episodeId: row.episodeId,
+            timestamp: parseFloat(row.timestamp),
+            filePath: row.filePath,
+            fileName: row.fileName,
+            fileSize: row.fileSize,
+            width: row.width,
+            height: row.height,
+            format: row.format,
+            createdAt: row.createdAt
+          })
+        )
       }).pipe(
         Effect.catchTag(
           "SqlError",
@@ -54,7 +86,18 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           return yield* Effect.fail(new NotFoundError({ entity: "Thumbnail", id }))
         }
 
-        return result[0] as Thumbnail
+        return Thumbnail.make({
+          id: result[0]!.id,
+          episodeId: result[0]!.episodeId,
+          timestamp: parseFloat(result[0]!.timestamp),
+          filePath: result[0]!.filePath,
+          fileName: result[0]!.fileName,
+          fileSize: result[0]!.fileSize,
+          width: result[0]!.width,
+          height: result[0]!.height,
+          format: result[0]!.format,
+          createdAt: result[0]!.createdAt
+        })
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findById" }))),
         Effect.annotateLogs("operation", "ThumbnailsRepository.findById"),
@@ -69,7 +112,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           .where(eq(thumbnails.episodeId, episodeId))
           .orderBy(asc(thumbnails.timestamp))
 
-        return result as Array<Thumbnail>
+        return yield* Effect.forEach(result, toDomainEntity, { concurrency: "unbounded" })
       }).pipe(
         Effect.catchTag("SqlError", (error) =>
           Effect.fail(new DatabaseError({ cause: error, operation: "findByEpisodeId" }))),
@@ -85,7 +128,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           return yield* Effect.fail(new NotFoundError({ entity: "Thumbnail", filePath }))
         }
 
-        return result[0] as Thumbnail
+        return yield* toDomainEntity(result[0]!)
       }).pipe(
         Effect.catchTag("SqlError", (error) =>
           Effect.fail(new DatabaseError({ cause: error, operation: "findByFilePath" }))),
@@ -93,7 +136,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.findByFilePath")
       )
 
-    const findByTimeRange = (episodeId: string, timeRange: ThumbnailTimeRange) =>
+    const findByTimeRange = (episodeId: string, timeRange: ThumbnailRowTimeRange) =>
       Effect.gen(function*() {
         const result = yield* db
           .select()
@@ -107,7 +150,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           )
           .orderBy(asc(thumbnails.timestamp))
 
-        return result as Array<Thumbnail>
+        return yield* Effect.forEach(result, toDomainEntity, { concurrency: "unbounded" })
       }).pipe(
         Effect.catchTag("SqlError", (error) =>
           Effect.fail(new DatabaseError({ cause: error, operation: "findByTimeRange" }))),
@@ -131,7 +174,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           return yield* Effect.fail(new NotFoundError({ entity: "Thumbnail", episodeId, timestamp }))
         }
 
-        return result[0] as Thumbnail
+        return yield* toDomainEntity(result[0] as ThumbnailRow)
       }).pipe(
         Effect.catchTag("SqlError", (error) =>
           Effect.fail(new DatabaseError({ cause: error, operation: "findNearestToTimestamp" }))),
@@ -139,7 +182,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.findNearestToTimestamp")
       )
 
-    const findAll = (filters?: ThumbnailFilters) =>
+    const findAll = (filters?: ThumbnailRowFilters) =>
       Effect.gen(function*() {
         const conditions: Array<SQL> = []
 
@@ -160,14 +203,14 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         }
 
         const result = yield* db.select().from(thumbnails).where(and(...conditions)).orderBy(asc(thumbnails.timestamp))
-        return result
+        return yield* Effect.forEach(result, toDomainEntity, { concurrency: "unbounded" })
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findAll" }))),
         Effect.annotateLogs("operation", "ThumbnailsRepository.findAll"),
         Effect.withSpan("ThumbnailsRepository.findAll")
       )
 
-    const update = (id: string, data: Partial<NewThumbnail>) =>
+    const update = (id: string, data: Partial<NewThumbnailRow>) =>
       Effect.gen(function*() {
         const result = yield* db
           .update(thumbnails)
@@ -179,7 +222,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           return yield* Effect.fail(new NotFoundError({ entity: "Thumbnail", id }))
         }
 
-        return result[0]
+        return yield* toDomainEntity(result[0]!)
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "update" }))),
         Effect.annotateLogs("operation", "ThumbnailsRepository.update"),
@@ -209,7 +252,12 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.deleteByEpisodeId")
       )
 
-    const getThumbnailsForTimeRange = (episodeId: string, startTime: number, endTime: number, maxCount: number = 10) =>
+    const getThumbnailRowsForTimeRange = (
+      episodeId: string,
+      startTime: number,
+      endTime: number,
+      maxCount: number = 10
+    ) =>
       Effect.gen(function*() {
         const result = yield* db.execute(
           sql`
@@ -222,7 +270,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
           `
         )
 
-        return result
+        return yield* Effect.forEach(result as Array<ThumbnailRow>, toDomainEntity, { concurrency: "unbounded" })
       }).pipe(
         Effect.catchTag(
           "SqlError",
@@ -244,7 +292,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
       update,
       deleteById,
       deleteByEpisodeId,
-      getThumbnailsForTimeRange
+      getThumbnailsForTimeRange: getThumbnailRowsForTimeRange
     } as const
   })
 }) {}
