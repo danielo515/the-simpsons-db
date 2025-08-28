@@ -146,6 +146,32 @@ const EpisodeSchema = Schema.Struct({
 })
 ```
 
+#### Working with branded ids
+
+When working with branded ids, use the `brand` function from `effect`:
+
+```typescript
+// ✅ Correct: Using branded ids
+const EpisodeId = Schema.String.pipe(Schema.brand("EpisodeId"))
+
+const episodeId = EpisodeId.make("123")
+```
+
+### Extracting types from Schema
+
+When working with Schema, you can extract the type using the `Type` property:
+
+```typescript
+// ✅ Correct: Extracting type from Schema
+const EpisodeSchema = Schema.Struct({
+  id: Schema.String,
+  season: Schema.Number,
+  processed: Schema.Boolean
+})
+
+const EpisodeType = typeof EpisodeSchema.Type
+```
+
 #### Working with Redacted Values
 
 Access redacted values using the Redacted namespace:
@@ -195,7 +221,7 @@ const processEpisode = (episodeId: string) =>
 
     return yield* saveProcessedEpisode({ episode, transcription, embeddings })
   }).pipe(
-    Effect.annotateSpan("processEpisode", { episodeId }),
+    Effect.withSpan("processEpisode", { episodeId }),
     Effect.annotateLogs({ operation: "episode-processing", episodeId })
   )
 ```
@@ -210,26 +236,21 @@ const toDomainEntity = (record: DatabaseRecord) =>
   DomainEntity.make({
     id: record.id,
     title: record.title,
-    season: record.season,
+    season: record.season
     // ... other fields
   })
 
 // ✅ Also correct: For complex transformations that might fail
 const toDomainEntity = (record: DatabaseRecord) =>
   Effect.gen(function* () {
-    const processedData = yield* processComplexField(record.rawData)
-    return DomainEntity.make({
-      id: record.id,
-      processedData,
-      // ... other fields
-    })
+    return yield* Schema.decodeUnknown(DomainEntity)(record)
   })
 
 // ❌ Incorrect: Using Schema.decodeUnknown for known shapes
 const toDomainEntity = (record: DatabaseRecord) =>
   Effect.gen(function* () {
     return yield* Schema.decodeUnknown(DomainEntity)({
-      id: record.id,
+      id: record.id
       // ... other fields
     })
   })
