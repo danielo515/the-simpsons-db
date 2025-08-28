@@ -1,6 +1,6 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
-import { Transcription } from "@simpsons-db/domain"
 import type { EpisodeId, TranscriptionId } from "@simpsons-db/domain"
+import { Transcription } from "@simpsons-db/domain"
 import { and, asc, eq, gte, lte } from "drizzle-orm"
 import type { ParseResult } from "effect"
 import { Effect } from "effect"

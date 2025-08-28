@@ -1,9 +1,9 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
-import type { TranscriptionEmbeddingId, TranscriptionId } from "@simpsons-db/domain"
 import { TranscriptionEmbedding as DomainTranscriptionEmbedding } from "@simpsons-db/domain"
 import { and, eq, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
+import type { TranscriptionEmbeddingId, TranscriptionId } from "../schemas/branded-types.js"
 import { episodes } from "../schemas/episodes.js"
 import type { NewTranscriptionEmbeddingRow } from "../schemas/transcription-embeddings.js"
 import { transcriptionEmbeddings } from "../schemas/transcription-embeddings.js"
@@ -267,7 +267,7 @@ export class TranscriptionEmbeddingsRepository
           Effect.withSpan("TranscriptionEmbeddingsRepository.findAll")
         )
 
-      const update = (id: string, data: Partial<NewTranscriptionEmbeddingRow>) =>
+      const update = (id: TranscriptionEmbeddingId, data: Partial<NewTranscriptionEmbeddingRow>) =>
         Effect.gen(function*() {
           const result = yield* db
             .update(transcriptionEmbeddings)

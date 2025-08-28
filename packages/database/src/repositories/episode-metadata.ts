@@ -4,6 +4,7 @@ import { EpisodeMetadata as DomainEpisodeMetadata } from "@simpsons-db/domain"
 import { and, asc, eq } from "drizzle-orm"
 import { Effect, Schema } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
+import type { EpisodeMetadataId } from "../schemas/branded-types.js"
 import { episodeMetadata, type EpisodeMetadataRow, type NewEpisodeMetadataRow } from "../schemas/episode-metadata.js"
 
 // Helper function to convert database row to domain entity input
@@ -30,7 +31,7 @@ const mapDbRowToDomain = (row: EpisodeMetadataRow) => ({
 })
 
 export interface EpisodeMetadataFilters {
-  episodeId?: string
+  episodeId?: EpisodeId
   source?: string
   season?: number
   episodeNumber?: number
@@ -81,7 +82,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
           Effect.withSpan("EpisodeMetadataRepository.createMany")
         )
 
-      const findById = (id: string) =>
+      const findById = (id: EpisodeMetadataId) =>
         Effect.gen(function*() {
           const result = yield* db
             .select()
@@ -109,7 +110,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
           })
         )
 
-      const findByEpisodeId = (episodeId: string) =>
+      const findByEpisodeId = (episodeId: EpisodeId) =>
         Effect.gen(function*() {
           yield* Effect.annotateCurrentSpan({ episodeId })
           const result = yield* db
@@ -129,9 +130,9 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
           Effect.withSpan("EpisodeMetadataRepository.findByEpisodeId")
         )
 
-      const findByEpisodeIdAndSource = (episodeId: string, source: string) =>
+      const findByEpisodeIdAndSource = (episodeId: EpisodeId, source: string) =>
         Effect.gen(function*() {
-          const result = yield* db
+          const [result] = yield* db
             .select()
             .from(episodeMetadata)
             .where(
@@ -141,8 +142,8 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
               )
             )
 
-          if (result.length === 0) {
-            return yield* Effect.fail(
+          if (!result) {
+            return yield* (
               new NotFoundError({
                 entity: "EpisodeMetadata",
                 episodeId,
@@ -151,7 +152,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             )
           }
 
-          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -378,7 +379,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
           Effect.withSpan("EpisodeMetadataRepository.findAll")
         )
 
-      const update = (id: string, data: Partial<NewEpisodeMetadataRow>) =>
+      const update = (id: EpisodeMetadataId, data: Partial<NewEpisodeMetadataRow>) =>
         Effect.gen(function*() {
           const result = yield* db
             .update(episodeMetadata)
@@ -405,7 +406,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
         )
 
       const upsertByEpisodeIdAndSource = (
-        episodeId: string,
+        episodeId: EpisodeId,
         source: string,
         data: Omit<NewEpisodeMetadataRow, "episodeId" | "source">
       ) =>
@@ -431,7 +432,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
           )
         )
 
-      const deleteById = (id: string) =>
+      const deleteById = (id: EpisodeMetadataId) =>
         Effect.gen(function*() {
           const result = yield* db
             .delete(episodeMetadata)
@@ -454,7 +455,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
           })
         )
 
-      const deleteByEpisodeId = (episodeId: string) =>
+      const deleteByEpisodeId = (episodeId: EpisodeId) =>
         Effect.gen(function*() {
           yield* db
             .delete(episodeMetadata)
