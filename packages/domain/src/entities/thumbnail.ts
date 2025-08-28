@@ -1,8 +1,12 @@
 import { Schema } from "effect"
+import { EpisodeId } from "./episode.js"
+
+export const ThumbnailId = Schema.UUID.pipe(Schema.brand("ThumbnailId"))
+export type ThumbnailId = typeof ThumbnailId.Type
 
 export const Thumbnail = Schema.Struct({
-  id: Schema.UUID,
-  episodeId: Schema.UUID,
+  id: ThumbnailId,
+  episodeId: EpisodeId,
   timestamp: Schema.Number.pipe(Schema.nonNegative()),
   filePath: Schema.String.pipe(Schema.minLength(1)),
   fileName: Schema.String.pipe(Schema.minLength(1)),
@@ -16,7 +20,7 @@ export const Thumbnail = Schema.Struct({
 export type Thumbnail = typeof Thumbnail.Type
 
 export const CreateThumbnailRequest = Schema.Struct({
-  episodeId: Schema.UUID,
+  episodeId: EpisodeId,
   timestamp: Schema.Number.pipe(Schema.nonNegative()),
   filePath: Schema.String.pipe(Schema.minLength(1)),
   fileName: Schema.String.pipe(Schema.minLength(1)),

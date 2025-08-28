@@ -1,5 +1,5 @@
+import type { TranscriptionEmbeddingId, TranscriptionId } from "@simpsons-db/domain"
 import { index, pgTable, timestamp, uuid, varchar, vector } from "drizzle-orm/pg-core"
-import type { TranscriptionEmbeddingId, TranscriptionId } from "./branded-types.js"
 import { transcriptions } from "./transcriptions.js"
 
 export const transcriptionEmbeddings = pgTable("transcription_embeddings", {

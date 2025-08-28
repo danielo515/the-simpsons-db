@@ -3,6 +3,7 @@ import { Schema } from "effect"
 import { EpisodeId } from "./episode.js"
 
 export const TranscriptionId = Schema.UUID.pipe(Schema.brand("TranscriptionId"))
+export type TranscriptionId = typeof TranscriptionId.Type
 
 // Core Transcription domain entity
 export const Transcription = Schema.Struct({
@@ -21,6 +22,7 @@ export type Transcription = typeof Transcription.Type
 
 // Core TranscriptionEmbedding domain entity
 export const TranscriptionEmbeddingId = Schema.UUID.pipe(Schema.brand("TranscriptionEmbeddingId"))
+export type TranscriptionEmbeddingId = typeof TranscriptionEmbeddingId.Type
 export const TranscriptionEmbedding = Schema.Struct({
   id: TranscriptionEmbeddingId,
   transcriptionId: TranscriptionId,

@@ -1,5 +1,5 @@
+import type { EpisodeId } from "@simpsons-db/domain"
 import { boolean, decimal, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
-import type { EpisodeId } from "./branded-types.js"
 
 export const episodes = pgTable("episodes", {
   id: uuid("id").primaryKey().defaultRandom().$type<EpisodeId>(),

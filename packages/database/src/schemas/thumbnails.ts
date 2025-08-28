@@ -1,5 +1,5 @@
+import type { EpisodeId, ThumbnailId } from "@simpsons-db/domain"
 import { decimal, index, integer, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
-import type { EpisodeId, ThumbnailId } from "./branded-types.js"
 import { episodes } from "./episodes.js"
 
 export const thumbnails = pgTable("thumbnails", {

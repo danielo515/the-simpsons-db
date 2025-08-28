@@ -1,9 +1,12 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
-import { TranscriptionEmbedding as DomainTranscriptionEmbedding } from "@simpsons-db/domain"
+import {
+  TranscriptionEmbedding as DomainTranscriptionEmbedding,
+  type TranscriptionEmbeddingId,
+  type TranscriptionId
+} from "@simpsons-db/domain"
 import { and, eq, sql } from "drizzle-orm"
 import { Effect } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
-import type { TranscriptionEmbeddingId, TranscriptionId } from "../schemas/branded-types.js"
 import { episodes } from "../schemas/episodes.js"
 import type { NewTranscriptionEmbeddingRow } from "../schemas/transcription-embeddings.js"
 import { transcriptionEmbeddings } from "../schemas/transcription-embeddings.js"

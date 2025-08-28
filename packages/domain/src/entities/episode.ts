@@ -4,6 +4,9 @@ import { Schema } from "effect"
 export const EpisodeId = Schema.UUID.pipe(Schema.brand("EpisodeId"))
 export type EpisodeId = typeof EpisodeId.Type
 
+export const EpisodeMetadataId = Schema.UUID.pipe(Schema.brand("EpisodeMetadataId"))
+export type EpisodeMetadataId = typeof EpisodeMetadataId.Type
+
 // Core Episode domain entity
 export const Episode = Schema.Struct({
   id: EpisodeId,
@@ -50,7 +53,7 @@ export type UpdateEpisodeRequest = typeof UpdateEpisodeRequest.Type
 
 // Episode Metadata domain entity
 export const EpisodeMetadata = Schema.Struct({
-  id: Schema.UUID,
+  id: EpisodeMetadataId,
   episodeId: EpisodeId,
   source: Schema.String.pipe(Schema.maxLength(50)),
   externalId: Schema.optional(Schema.String.pipe(Schema.maxLength(100))),

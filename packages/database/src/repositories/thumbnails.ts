@@ -1,5 +1,5 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
-import { Thumbnail } from "@simpsons-db/domain/entities/thumbnail"
+import { type EpisodeId, Thumbnail, type ThumbnailId } from "@simpsons-db/domain"
 import type { SQL } from "drizzle-orm"
 import { and, asc, eq, gte, lte, sql } from "drizzle-orm"
 import { Effect } from "effect"
@@ -8,7 +8,7 @@ import type { NewThumbnailRow, ThumbnailRow } from "../schemas/thumbnails.js"
 import { thumbnails } from "../schemas/thumbnails.js"
 
 export interface ThumbnailRowFilters {
-  episodeId?: string
+  episodeId?: EpisodeId
   startTimestamp?: number
   endTimestamp: number
   format?: string
@@ -78,7 +78,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.createMany")
       )
 
-    const findById = (id: string) =>
+    const findById = (id: ThumbnailId) =>
       Effect.gen(function*() {
         const result = yield* db.select().from(thumbnails).where(eq(thumbnails.id, id))
 
@@ -104,7 +104,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.findById")
       )
 
-    const findByEpisodeId = (episodeId: string) =>
+    const findByEpisodeId = (episodeId: EpisodeId) =>
       Effect.gen(function*() {
         const result = yield* db
           .select()
@@ -136,7 +136,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.findByFilePath")
       )
 
-    const findByTimeRange = (episodeId: string, timeRange: ThumbnailRowTimeRange) =>
+    const findByTimeRange = (episodeId: EpisodeId, timeRange: ThumbnailRowTimeRange) =>
       Effect.gen(function*() {
         const result = yield* db
           .select()
@@ -158,7 +158,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.findByTimeRange")
       )
 
-    const findNearestToTimestamp = (episodeId: string, timestamp: number) =>
+    const findNearestToTimestamp = (episodeId: EpisodeId, timestamp: number) =>
       Effect.gen(function*() {
         const result = yield* db.execute(
           sql`
@@ -210,7 +210,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.findAll")
       )
 
-    const update = (id: string, data: Partial<NewThumbnailRow>) =>
+    const update = (id: ThumbnailId, data: Partial<NewThumbnailRow>) =>
       Effect.gen(function*() {
         const result = yield* db
           .update(thumbnails)
@@ -229,7 +229,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.update")
       )
 
-    const deleteById = (id: string) =>
+    const deleteById = (id: ThumbnailId) =>
       Effect.gen(function*() {
         const result = yield* db.delete(thumbnails).where(eq(thumbnails.id, id)).returning()
 
@@ -242,7 +242,7 @@ export class ThumbnailsRepository extends Effect.Service<ThumbnailsRepository>()
         Effect.withSpan("ThumbnailsRepository.delete")
       )
 
-    const deleteByEpisodeId = (episodeId: string) =>
+    const deleteByEpisodeId = (episodeId: EpisodeId) =>
       Effect.gen(function*() {
         yield* db.delete(thumbnails).where(eq(thumbnails.episodeId, episodeId))
       }).pipe(

@@ -1,5 +1,5 @@
+import type { EpisodeId, EpisodeMetadataId } from "@simpsons-db/domain"
 import { index, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
-import type { EpisodeId, EpisodeMetadataId } from "./branded-types.js"
 import { episodes } from "./episodes.js"
 
 export const episodeMetadata = pgTable("episode_metadata", {

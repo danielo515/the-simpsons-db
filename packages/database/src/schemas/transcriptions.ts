@@ -1,5 +1,5 @@
+import type { EpisodeId, TranscriptionId } from "@simpsons-db/domain"
 import { decimal, index, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core"
-import type { EpisodeId, TranscriptionId } from "./branded-types.js"
 import { episodes } from "./episodes.js"
 
 export const transcriptions = pgTable(

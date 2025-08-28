@@ -1,10 +1,9 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
-import type { EpisodeId } from "@simpsons-db/domain"
+import type { EpisodeId, EpisodeMetadataId } from "@simpsons-db/domain"
 import { EpisodeMetadata as DomainEpisodeMetadata } from "@simpsons-db/domain"
 import { and, asc, eq } from "drizzle-orm"
 import { Effect, Schema } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
-import type { EpisodeMetadataId } from "../schemas/branded-types.js"
 import { episodeMetadata, type EpisodeMetadataRow, type NewEpisodeMetadataRow } from "../schemas/episode-metadata.js"
 
 // Helper function to convert database row to domain entity input
