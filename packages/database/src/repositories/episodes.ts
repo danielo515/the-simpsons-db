@@ -1,5 +1,5 @@
 import { PgDrizzle } from "@effect/sql-drizzle/Pg"
-import { Episode } from "@simpsons-db/domain/entities/episode"
+import { Episode, type EpisodeId } from "@simpsons-db/domain/entities/episode"
 import { and, asc, eq, isNotNull, isNull } from "drizzle-orm"
 import { Effect } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
@@ -16,7 +16,7 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
   effect: Effect.gen(function*() {
     const db = yield* PgDrizzle
     const mapDbRowToDomain = (dbResult: EpisodeRow) => ({
-      id: dbResult.id as typeof Episode.Type.id,
+      id: dbResult.id,
       season: 1, // Default values since episodes table doesn't store episode metadata
       episodeNumber: 1,
       title: "Unknown Episode",
@@ -57,15 +57,15 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
         Effect.withSpan("EpisodesRepository.create")
       )
 
-    const findById = (id: string) =>
+    const findById = (id: EpisodeId) =>
       Effect.gen(function*() {
-        const result = yield* db.select().from(episodes).where(eq(episodes.id, id))
+        const [row] = yield* db.select().from(episodes).where(eq(episodes.id, id))
 
-        if (result.length === 0) {
-          return yield* Effect.fail(new NotFoundError({ entity: "Episode", id }))
+        if (!row) {
+          return yield* new NotFoundError({ entity: "Episode", id })
         }
 
-        return Episode.make(mapDbRowToDomain(result[0]!))
+        return Episode.make(mapDbRowToDomain(row))
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findById" }))),
         Effect.annotateLogs("operation", "EpisodesRepository.findById"),
@@ -74,13 +74,13 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
 
     const findByFilePath = (filePath: string) =>
       Effect.gen(function*() {
-        const result = yield* db.select().from(episodes).where(eq(episodes.filePath, filePath))
+        const [row] = yield* db.select().from(episodes).where(eq(episodes.filePath, filePath))
 
-        if (result.length === 0) {
-          return yield* Effect.fail(new NotFoundError({ entity: "Episode", filePath }))
+        if (!row) {
+          return yield* new NotFoundError({ entity: "Episode", filePath })
         }
 
-        return Episode.make(mapDbRowToDomain(result[0]!))
+        return Episode.make(mapDbRowToDomain(row))
       }).pipe(
         Effect.catchTag("SqlError", (error) =>
           Effect.fail(new DatabaseError({ cause: error, operation: "findByFilePath" }))),
@@ -90,17 +90,13 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
 
     const findByChecksum = (checksum: string) =>
       Effect.gen(function*() {
-        const result = yield* db.select().from(episodes).where(eq(episodes.checksum, checksum))
+        const [row] = yield* db.select().from(episodes).where(eq(episodes.checksum, checksum))
 
-        if (result.length === 0) {
-          return yield* Effect.fail(new NotFoundError({ entity: "Episode", checksum }))
-        }
-
-        if (!result[0]) {
+        if (!row) {
           return yield* new NotFoundError({ entity: "Episode", checksum })
         }
-        const mappedResult = mapDbRowToDomain(result[0])
-        return Episode.make(mappedResult)
+
+        return Episode.make(mapDbRowToDomain(row))
       }).pipe(
         Effect.catchTag("SqlError", (error) =>
           Effect.fail(new DatabaseError({ cause: error, operation: "findByChecksum" }))),
@@ -133,7 +129,7 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
       )
 
     const update = (
-      id: string,
+      id: EpisodeId,
       data: Partial<NewEpisodeRow> & {
         processed?: boolean
         processingStartedAt?: Date
@@ -142,39 +138,39 @@ export class EpisodesRepository extends Effect.Service<EpisodesRepository>()("Ep
       }
     ) =>
       Effect.gen(function*() {
-        const result = yield* db
+        const [row] = yield* db
           .update(episodes)
           .set({ ...data, updatedAt: new Date() })
           .where(eq(episodes.id, id))
           .returning()
 
-        if (!result[0]) {
+        if (!row) {
           return yield* new NotFoundError({ entity: "Episode", id })
         }
-        return Episode.make(mapDbRowToDomain(result[0]))
+        return Episode.make(mapDbRowToDomain(row))
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "update" }))),
         Effect.annotateLogs("operation", "EpisodesRepository.update"),
         Effect.withSpan("EpisodesRepository.update")
       )
 
-    const markProcessingStarted = (id: string) => update(id, { processingStartedAt: new Date() })
+    const markProcessingStarted = (id: EpisodeId) => update(id, { processingStartedAt: new Date() })
 
-    const markProcessingCompleted = (id: string) =>
+    const markProcessingCompleted = (id: EpisodeId) =>
       update(id, {
         processed: true,
         processingCompletedAt: new Date(),
         processingError: null
       })
 
-    const markProcessingFailed = (id: string, error: string) =>
+    const markProcessingFailed = (id: EpisodeId, error: string) =>
       update(id, {
         processed: false,
         processingError: error,
         processingCompletedAt: new Date()
       })
 
-    const deleteById = (id: string) =>
+    const deleteById = (id: EpisodeId) =>
       Effect.gen(function*() {
         yield* db.delete(episodes).where(eq(episodes.id, id)).returning()
       }).pipe(

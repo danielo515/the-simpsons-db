@@ -54,11 +54,11 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
     const create = (transcription: Omit<Transcription, "id">) =>
       Effect.gen(function*() {
         const dbRecord = toDbRecord(transcription)
-        const result = yield* db.insert(transcriptions).values(dbRecord).returning()
-        if (!result[0]) {
-          return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id: "unknown" }))
+        const [row] = yield* db.insert(transcriptions).values(dbRecord).returning()
+        if (!row) {
+          return yield* new NotFoundError({ entity: "Transcription", id: "unknown" })
         }
-        return yield* toDomainEntity(result[0])
+        return yield* toDomainEntity(row)
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "create" }))),
         Effect.annotateLogs("operation", "TranscriptionsRepository.create"),
@@ -83,12 +83,12 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
       id: typeof TranscriptionId.Type
     ): Effect.Effect<Transcription, DatabaseError | NotFoundError | ParseResult.ParseError, PgDrizzle> =>
       Effect.gen(function*() {
-        const result = yield* db.select().from(transcriptions).where(eq(transcriptions.id, id))
+        const [row] = yield* db.select().from(transcriptions).where(eq(transcriptions.id, id))
 
-        if (!result[0]) {
-          return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id: "unknown" }))
+        if (!row) {
+          return yield* new NotFoundError({ entity: "Transcription", id: "unknown" })
         }
-        return yield* toDomainEntity(result[0])
+        return yield* toDomainEntity(row)
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "findById" }))),
         Effect.annotateLogs("operation", "TranscriptionsRepository.findById"),
@@ -159,20 +159,16 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
           updatedAt: new Date()
         }
 
-        const result = yield* db
+        const [row] = yield* db
           .update(transcriptions)
           .set(dbUpdates)
           .where(eq(transcriptions.id, id))
           .returning()
 
-        if (result.length === 0) {
-          return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id }))
+        if (!row) {
+          return yield* new NotFoundError({ entity: "Transcription", id })
         }
-
-        if (!result[0]) {
-          return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id: "unknown" }))
-        }
-        return yield* toDomainEntity(result[0])
+        return yield* toDomainEntity(row)
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "update" }))),
         Effect.annotateLogs("operation", "TranscriptionsRepository.update"),
@@ -181,10 +177,10 @@ export class TranscriptionsRepository extends Effect.Service<TranscriptionsRepos
 
     const deleteById = (id: typeof TranscriptionId.Type) =>
       Effect.gen(function*() {
-        const result = yield* db.delete(transcriptions).where(eq(transcriptions.id, id)).returning()
+        const [row] = yield* db.delete(transcriptions).where(eq(transcriptions.id, id)).returning()
 
-        if (result.length === 0) {
-          return yield* Effect.fail(new NotFoundError({ entity: "Transcription", id }))
+        if (!row) {
+          return yield* new NotFoundError({ entity: "Transcription", id })
         }
       }).pipe(
         Effect.catchTag("SqlError", (error) => Effect.fail(new DatabaseError({ cause: error, operation: "delete" }))),

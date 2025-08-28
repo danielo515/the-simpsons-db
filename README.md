@@ -261,3 +261,35 @@ const toDomainEntity = (record: DatabaseRecord): DomainEntity =>
 ```
 
 **Note:** Use `Schema.decodeUnknown` only when dealing with truly unknown data (e.g., external API responses, user input). Repositories work with known database schemas and should use smart constructors.
+
+## Database
+
+### Dealing with arrays that may be empty
+
+DB operations returns arrays even for single item searches, and by definition arrays could be empty. In those cases, don't check the length of the result, as typescript is not able to infer that the first element is not undefined.
+
+```typescript
+// ✅ Correct
+const [result] =
+  yield * db.select().from(episodeMetadata).where(eq(episodeMetadata.id, id))
+
+if (!result) {
+  return yield * new NotFoundError({ entity: "EpisodeMetadata", id })
+}
+
+return DomainEpisodeMetadata.make(mapDbRowToDomain(result))
+```
+
+You may feel tempted to make null type assertions, but NEVER do it. It will break at runtime.
+
+```typescript
+// ❌ Incorrect
+const result =
+  yield * db.select().from(episodeMetadata).where(eq(episodeMetadata.id, id))
+
+if (!result.length) {
+  return yield * new NotFoundError({ entity: "EpisodeMetadata", id })
+}
+
+return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0])) // Error: result[0] could be undefined
+```

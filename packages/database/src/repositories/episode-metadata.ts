@@ -2,7 +2,7 @@ import { PgDrizzle } from "@effect/sql-drizzle/Pg"
 import type { EpisodeId, EpisodeMetadataId } from "@simpsons-db/domain"
 import { EpisodeMetadata as DomainEpisodeMetadata } from "@simpsons-db/domain"
 import { and, asc, eq } from "drizzle-orm"
-import { Effect, Schema } from "effect"
+import { Effect } from "effect"
 import { DatabaseError, NotFoundError } from "../errors.js"
 import { episodeMetadata, type EpisodeMetadataRow, type NewEpisodeMetadataRow } from "../schemas/episode-metadata.js"
 
@@ -83,18 +83,16 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
 
       const findById = (id: EpisodeMetadataId) =>
         Effect.gen(function*() {
-          const result = yield* db
+          const [result] = yield* db
             .select()
             .from(episodeMetadata)
             .where(eq(episodeMetadata.id, id))
 
-          if (result.length === 0) {
-            return yield* Effect.fail(
-              new NotFoundError({ entity: "EpisodeMetadata", id })
-            )
+          if (!result) {
+            return yield* new NotFoundError({ entity: "EpisodeMetadata", id })
           }
 
-          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -118,8 +116,11 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .where(eq(episodeMetadata.episodeId, episodeId))
             .orderBy(asc(episodeMetadata.source))
 
-          return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbRowToDomain(item)), { concurrency: "unbounded" })
+          return yield* Effect.forEach(
+            result,
+            (item) => Effect.succeed(DomainEpisodeMetadata.make(mapDbRowToDomain(item))),
+            { concurrency: "unbounded" }
+          )
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -142,13 +143,11 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             )
 
           if (!result) {
-            return yield* (
-              new NotFoundError({
-                entity: "EpisodeMetadata",
-                episodeId,
-                source
-              })
-            )
+            return yield* new NotFoundError({
+              entity: "EpisodeMetadata",
+              episodeId,
+              source
+            })
           }
 
           return DomainEpisodeMetadata.make(mapDbRowToDomain(result))
@@ -191,8 +190,11 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .where(and(...conditions))
             .orderBy(asc(episodeMetadata.source))
 
-          return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbRowToDomain(item)), { concurrency: "unbounded" })
+          return yield* Effect.forEach(
+            result,
+            (item) => Effect.succeed(DomainEpisodeMetadata.make(mapDbRowToDomain(item))),
+            { concurrency: "unbounded" }
+          )
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -223,13 +225,11 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             )
 
           if (result.length === 0) {
-            return yield* Effect.fail(
-              new NotFoundError({
-                entity: "EpisodeMetadata",
-                source,
-                externalId
-              })
-            )
+            return yield* new NotFoundError({
+              entity: "EpisodeMetadata",
+              source,
+              externalId
+            })
           }
 
           return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
@@ -254,8 +254,11 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .from(episodeMetadata)
             .where(eq(episodeMetadata.imdbId, imdbId))
 
-          return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbRowToDomain(item)), { concurrency: "unbounded" })
+          return yield* Effect.forEach(
+            result,
+            (item) => Effect.succeed(DomainEpisodeMetadata.make(mapDbRowToDomain(item))),
+            { concurrency: "unbounded" }
+          )
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -278,9 +281,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .where(eq(episodeMetadata.tmdbId, tmdbId))
 
           if (result.length === 0) {
-            return yield* Effect.fail(
-              new NotFoundError({ entity: "EpisodeMetadata", tmdbId })
-            )
+            return yield* new NotFoundError({ entity: "EpisodeMetadata", tmdbId })
           }
 
           return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
@@ -306,9 +307,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .where(eq(episodeMetadata.tvmazeId, tvmazeId))
 
           if (result.length === 0) {
-            return yield* Effect.fail(
-              new NotFoundError({ entity: "EpisodeMetadata", tvmazeId })
-            )
+            return yield* new NotFoundError({ entity: "EpisodeMetadata", tvmazeId })
           }
 
           return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
@@ -364,8 +363,11 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             asc(episodeMetadata.season),
             asc(episodeMetadata.episodeNumber)
           )
-          return yield* Effect.forEach(result, (item) =>
-            Schema.decodeUnknown(DomainEpisodeMetadata)(mapDbRowToDomain(item)), { concurrency: "unbounded" })
+          return yield* Effect.forEach(
+            result,
+            (item) => Effect.succeed(DomainEpisodeMetadata.make(mapDbRowToDomain(item))),
+            { concurrency: "unbounded" }
+          )
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -387,12 +389,10 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .returning()
 
           if (result.length === 0) {
-            return yield* Effect.fail(
-              new NotFoundError({ entity: "EpisodeMetadata", id })
-            )
+            return yield* new NotFoundError({ entity: "EpisodeMetadata", id })
           }
 
-          return result[0]
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -439,9 +439,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             .returning()
 
           if (result.length === 0) {
-            return yield* Effect.fail(
-              new NotFoundError({ entity: "EpisodeMetadata", id })
-            )
+            return yield* new NotFoundError({ entity: "EpisodeMetadata", id })
           }
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
