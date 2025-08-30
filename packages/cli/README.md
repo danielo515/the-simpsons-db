@@ -1,3 +1,13 @@
+# Simpsons DB CLI
+
+This package README has been consolidated. Please refer to `dev-docs/cli.md` for the up-to-date documentation, patterns, and examples.
+
+- Usage: `pnpm -w --filter @simpsons-db/cli dev`
+- Type check: `pnpm -w --filter @simpsons-db/cli type-check`
+- Tests: `pnpm -w --filter @simpsons-db/cli test`
+
+---
+
 # CLI with Effect — Reference & Best Practices
 
 This document explains how to build CLI apps and commands using `@effect/cli` and run them with `@effect/platform-node`. It’s tailored to this repository’s `packages/cli/` layout and verified against the Effect docs via MCP for:

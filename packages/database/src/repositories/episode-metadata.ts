@@ -214,7 +214,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
 
       const findByExternalId = (source: string, externalId: string) =>
         Effect.gen(function*() {
-          const result = yield* db
+          const [result] = yield* db
             .select()
             .from(episodeMetadata)
             .where(
@@ -224,7 +224,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
               )
             )
 
-          if (result.length === 0) {
+          if (!result) {
             return yield* new NotFoundError({
               entity: "EpisodeMetadata",
               source,
@@ -232,7 +232,7 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
             })
           }
 
-          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -275,16 +275,16 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
 
       const findByTmdbId = (tmdbId: number) =>
         Effect.gen(function*() {
-          const result = yield* db
+          const [result] = yield* db
             .select()
             .from(episodeMetadata)
             .where(eq(episodeMetadata.tmdbId, tmdbId))
 
-          if (result.length === 0) {
+          if (!result) {
             return yield* new NotFoundError({ entity: "EpisodeMetadata", tmdbId })
           }
 
-          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -301,16 +301,16 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
 
       const findByTvmazeId = (tvmazeId: number) =>
         Effect.gen(function*() {
-          const result = yield* db
+          const [result] = yield* db
             .select()
             .from(episodeMetadata)
             .where(eq(episodeMetadata.tvmazeId, tvmazeId))
 
-          if (result.length === 0) {
+          if (!result) {
             return yield* new NotFoundError({ entity: "EpisodeMetadata", tvmazeId })
           }
 
-          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(
@@ -382,17 +382,17 @@ export class EpisodeMetadataRepository extends Effect.Service<EpisodeMetadataRep
 
       const update = (id: EpisodeMetadataId, data: Partial<NewEpisodeMetadataRow>) =>
         Effect.gen(function*() {
-          const result = yield* db
+          const [result] = yield* db
             .update(episodeMetadata)
             .set({ ...data, updatedAt: new Date() })
             .where(eq(episodeMetadata.id, id))
             .returning()
 
-          if (result.length === 0) {
+          if (!result) {
             return yield* new NotFoundError({ entity: "EpisodeMetadata", id })
           }
 
-          return DomainEpisodeMetadata.make(mapDbRowToDomain(result[0]!))
+          return DomainEpisodeMetadata.make(mapDbRowToDomain(result))
         }).pipe(
           Effect.catchTag("SqlError", (error) =>
             Effect.fail(

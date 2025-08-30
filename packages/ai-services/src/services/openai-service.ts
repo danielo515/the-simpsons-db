@@ -97,7 +97,8 @@ export class OpenAIService extends Context.Tag("OpenAIService")<
               })
           })
 
-          if (response.data.length === 0) {
+          const [first] = response.data
+          if (!first) {
             return yield* Effect.fail(
               new OpenAIError({
                 message: "No embedding data returned from OpenAI"
@@ -105,9 +106,9 @@ export class OpenAIService extends Context.Tag("OpenAIService")<
             )
           }
 
-          yield* Effect.log(`Embedding created: ${response.data[0].embedding.length} dimensions`)
+          yield* Effect.log(`Embedding created: ${first.embedding.length} dimensions`)
 
-          return response.data[0].embedding
+          return first.embedding
         })
 
       const createEmbeddings = (
